@@ -3,7 +3,7 @@
   "build": {
     "commands": [
       "pip install -r requirements.txt",
-      "python3.8 bot.py"
+      "python bot.py"
     ]
   }
 }
