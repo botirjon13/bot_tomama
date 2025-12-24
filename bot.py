@@ -29,5 +29,6 @@ async def main():
 # Botni ishga tushirish
 if __name__ == '__main__':
     import asyncio
-    loop = asyncio.get_event_loop()  # get_event_loop() ishlatish
-    loop.run_until_complete(main())  # main()ni asyncio bilan ishga tushurish
+
+    # `asyncio.run()` metodini ishlatish o'rniga, `await` sintaksisini ishlatib, asinxron funksiya chaqiriladi
+    asyncio.run(main())  # `main()` funksiyasini chaqirish
