@@ -1,34 +1,32 @@
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import Updater, CommandHandler
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram.ext import Application, CommandHandler, ContextTypes
 
-# Botni yaratish uchun tokenni @BotFather-dan oling
+# Tokenni @BotFather dan olingan token bilan almashtiring
 TOKEN = '8449204541:AAG8--gTH_dncxMQ5cW1eKh03ht9Y_J7seI'
 
-# Start buyrug'i bajarilganda tugma ko'rsatish
-def start(update, context):
-    # Tugma yaratish
+# Start komandasi uchun callback funksiyasi
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    # Inline tugma yaratish (brauzerga yo'naltirish)
     keyboard = [
         [InlineKeyboardButton("Saytga o'tish", url='https://uztomama-production.up.railway.app/')]
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
     
     # Foydalanuvchiga xabar yuborish va tugmani ko'rsatish
-    update.message.reply_text("Salom! Saytga o'tish uchun quyidagi tugmani bosing:", reply_markup=reply_markup)
+    await update.message.reply_text('Salom! Saytga o'tish uchun quyidagi tugmani bosing:', reply_markup=reply_markup)
 
 # Botni ishga tushurish
-def main():
-    # Updater yordamida botni ishga tushuramiz
-    updater = Updater(TOKEN, use_context=True)
+async def main():
+    # Application obyekti yaratish
+    application = Application.builder().token(TOKEN).build()
 
-    # Dispatcher orqali start komandasi uchun handler qo'shish
-    dp = updater.dispatcher
-    dp.add_handler(CommandHandler("start", start))
+    # Start komandasi uchun handler qo'shish
+    application.add_handler(CommandHandler("start", start))
 
-    # Botni ishga tushurish
-    updater.start_polling()
+    # Polling orqali botni ishga tushurish
+    await application.run_polling()
 
-    # Botni to'xtatish uchun
-    updater.idle()
-
+# Botni ishga tushirish
 if __name__ == '__main__':
-    main()
+    import asyncio
+    asyncio.run(main())
