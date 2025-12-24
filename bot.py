@@ -13,6 +13,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     reply_markup = InlineKeyboardMarkup(keyboard)
     
     # Foydalanuvchiga xabar yuborish va tugmani ko'rsatish
+    # Stringni to'liq yopish
     await update.message.reply_text('Salom! Saytga o'tish uchun quyidagi tugmani bosing:', reply_markup=reply_markup)
 
 # Botni ishga tushurish
