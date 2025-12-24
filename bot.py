@@ -13,7 +13,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     reply_markup = InlineKeyboardMarkup(keyboard)
     
     # Foydalanuvchiga xabar yuborish va tugmani ko'rsatish
-    await update.message.reply_text('Салом, сайтга ўтиш учун қуйидаги тугмани босинг:', reply_markup=reply_markup)
+    await update.message.reply_text('Salom! Saytga otish uchun quyidagi tugmani bosing:', reply_markup=reply_markup)
 
 # Botni ishga tushurish
 async def main():
@@ -28,7 +28,6 @@ async def main():
 
 # Botni ishga tushirish
 if __name__ == '__main__':
-    # Bu yerda asyncio.run() o'rniga oddiy `await` ishlatib, botni ishga tushiramiz
     import asyncio
-    loop = asyncio.get_event_loop()
-    loop.run_until_complete(main())  # `main()` funksiyasini chaqiring
+    # asyncio.run() ni olib tashladik va to'g'ridan-to'g'ri await ishlatdik
+    asyncio.run(main())  # `main()` funksiyasini chaqirish
