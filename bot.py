@@ -13,7 +13,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     reply_markup = InlineKeyboardMarkup(keyboard)
     
     # Foydalanuvchiga xabar yuborish va tugmani ko'rsatish
-    await update.message.reply_text('Salom! Saytga o'tish uchun quyidagi tugmani bosing:', reply_markup=reply_markup)
+    await update.message.reply_text('Салом, сайтга ўтиш учун қуйидаги тугмани босинг:', reply_markup=reply_markup)
 
 # Botni ishga tushurish
 async def main():
