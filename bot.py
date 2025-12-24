@@ -1,32 +1,18 @@
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import Application, CommandHandler, ContextTypes
+import telebot
 
-# Tokenni @BotFather dan olingan token bilan almashtiring
+# Bot tokenini @BotFather dan olingan token bilan almashtiring
 TOKEN = '8449204541:AAG8--gTH_dncxMQ5cW1eKh03ht9Y_J7seI'
 
-# Start komandasi uchun callback funksiyasi
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    # Inline tugma yaratish (brauzerga yo'naltirish)
-    keyboard = [
-        [InlineKeyboardButton("Saytga o'tish", url='https://uztomama-production.up.railway.app/')]
-    ]
-    reply_markup = InlineKeyboardMarkup(keyboard)
-    
-    # Foydalanuvchiga xabar yuborish va tugmani ko'rsatish
-    await update.message.reply_text('Salom! Saytga otish uchun quyidagi tugmani bosing:', reply_markup=reply_markup)
+# telebot obyekti yaratish
+bot = telebot.TeleBot(TOKEN)
 
-# Botni ishga tushurish
-async def main():
-    # Application obyekti yaratish
-    application = Application.builder().token(TOKEN).build()
-
-    # Start komandasi uchun handler qo'shish
-    application.add_handler(CommandHandler("start", start))
-
-    # Polling orqali botni ishga tushurish
-    await application.run_polling()
+# /start komandasi uchun callback
+@bot.message_handler(commands=['start'])
+def send_welcome(message):
+    bot.reply_to(message, "Salom! Saytga o'tish uchun quyidagi tugmani bosing:")
+    markup = telebot.types.InlineKeyboardMarkup()
+    markup.add(telebot.types.InlineKeyboardButton("Saytga o'tish", url='https://uztomama-production.up.railway.app/'))
+    bot.send_message(message.chat.id, "Saytga o'tish uchun quyidagi tugmani bosing:", reply_markup=markup)
 
 # Botni ishga tushirish
-if __name__ == '__main__':
-    import asyncio
-    asyncio.run(main())  # `main()` funksiyasini chaqirish
+bot.polling()
