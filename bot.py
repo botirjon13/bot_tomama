@@ -29,6 +29,4 @@ async def main():
 # Botni ishga tushirish
 if __name__ == '__main__':
     import asyncio
-
-    # `asyncio.run()` metodini ishlatish o'rniga, `await` sintaksisini ishlatib, asinxron funksiya chaqiriladi
     asyncio.run(main())  # `main()` funksiyasini chaqirish
