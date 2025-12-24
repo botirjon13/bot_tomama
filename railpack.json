@@ -2,7 +2,8 @@
   "version": "0.15.4",
   "build": {
     "commands": [
-      "./start.sh"
+      "pip install -r requirements.txt",
+      "python bot.py"
     ]
   }
 }
