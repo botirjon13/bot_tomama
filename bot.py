@@ -9,9 +9,9 @@ bot = telebot.TeleBot(TOKEN)
 # /start komandasi uchun callback
 @bot.message_handler(commands=['start'])
 def send_welcome(message):
-    # Premium tugmalarni yaratish
+    # Tugmalarni kengaytirish va matnni qisqartirish
     markup = telebot.types.ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=False)
-    markup.add("🔹 Korxona Haqida Ma'lumot", "📞 Aloqa Ma'lumotlari", "🌐 Saytga O'tish")
+    markup.add("🔹 Korxona Haqida", "📞 Aloqa", "🌐 Saytga O'tish")
     
     bot.reply_to(message, 
                  "✨ Salom! Bizning botga xush kelibsiz! Quyidagi tugmalardan foydalanib, korxonamiz haqidagi "
