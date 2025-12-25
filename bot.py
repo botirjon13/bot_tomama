@@ -19,7 +19,7 @@ def send_welcome(message):
                  reply_markup=markup)
 
 # Korxona haqida ma'lumot
-@bot.message_handler(func=lambda message: message.text == "🔹 Korxona Haqida Ma'lumot")
+@bot.message_handler(func=lambda message: message.text == "🔹 Korxona Haqida")
 def send_info(message):
     info_text = """
     📢 **Bizning Kompaniya Haqida:**
@@ -34,7 +34,7 @@ def send_info(message):
     bot.reply_to(message, info_text, parse_mode='Markdown')
 
 # Foydalanuvchilar uchun aloqa ma'lumotlari
-@bot.message_handler(func=lambda message: message.text == "📞 Aloqa Ma'lumotlari")
+@bot.message_handler(func=lambda message: message.text == "📞 Aloqa")
 def contact_info(message):
     contact_text = """
     📬 **Biz bilan bog'lanish:**
