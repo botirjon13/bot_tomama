@@ -13,11 +13,12 @@ def main_keyboard():
         resize_keyboard=True,
         one_time_keyboard=False
     )
-    markup.add(
-        telebot.types.KeyboardButton("🔹 Korxona Haqida"),
-        telebot.types.KeyboardButton("📞 Aloqa"),
-        telebot.types.KeyboardButton("🌐 Saytga O'tish")
-    )
+
+    # Har bir tugma alohida qatorda
+    markup.add(telebot.types.KeyboardButton("🔹 Korxona Haqida"))
+    markup.add(telebot.types.KeyboardButton("📞 Aloqa"))
+    markup.add(telebot.types.KeyboardButton("🌐 Saytga O'tish"))
+
     return markup
 
 
