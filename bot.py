@@ -45,7 +45,7 @@ def send_info(message):
         "Bizning kompaniyamiz 2009-yildan buyon "
         "o‘z mijozlariga sifatli mahsulot va xizmatlar "
         "taqdim etib kelmoqda.\n\n"
-        "📧 Email: tomama@mail.ru\n"
+        "📧 Email: tomama-uz@mail.ru\n"
         "📞 Telefon: +998905547400"
     )
 
