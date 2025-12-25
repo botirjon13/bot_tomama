@@ -1,58 +1,111 @@
 import telebot
 
-# Bot tokenini @BotFather dan olingan token bilan almashtiring
+# Bot tokeni
 TOKEN = '8449204541:AAG8--gTH_dncxMQ5cW1eKh03ht9Y_J7seI'
 
-# telebot obyekti yaratish
 bot = telebot.TeleBot(TOKEN)
 
-# /start komandasi uchun callback
+# =======================
+# ASOSIY KLAWIATURA
+# =======================
+def main_keyboard():
+    markup = telebot.types.ReplyKeyboardMarkup(
+        resize_keyboard=True,
+        one_time_keyboard=False
+    )
+    markup.add(
+        telebot.types.KeyboardButton("🔹 Korxona Haqida"),
+        telebot.types.KeyboardButton("📞 Aloqa"),
+        telebot.types.KeyboardButton("🌐 Saytga O'tish")
+    )
+    return markup
+
+
+# =======================
+# /start komandasi
+# =======================
 @bot.message_handler(commands=['start'])
 def send_welcome(message):
-    # Tugmalarni kengaytirish va matnni qisqartirish
-    markup = telebot.types.ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=False)
-    markup.add("🔹 Korxona Haqida", "📞 Aloqa", "🌐 Saytga O'tish")
-    
-    bot.reply_to(message, 
-                 "✨ Salom! Bizning botga xush kelibsiz! Quyidagi tugmalardan foydalanib, korxonamiz haqidagi "
-                 "ma'lumotlarga, aloqa ma'lumotlariga va saytimizga kirishga imkoniyat topasiz. ",
-                 reply_markup=markup)
+    bot.send_message(
+        message.chat.id,
+        "✨ Salom! Bizning botga xush kelibsiz!\n"
+        "Quyidagi tugmalardan foydalaning 👇",
+        reply_markup=main_keyboard()
+    )
 
-# Korxona haqida ma'lumot
+
+# =======================
+# KORXONA HAQIDA
+# =======================
 @bot.message_handler(func=lambda message: message.text == "🔹 Korxona Haqida")
 def send_info(message):
-    info_text = """
-    📢 **Bizning Kompaniya Haqida:**
-    
-    Bizning kompaniyamiz 2009-yildan buyon o'z mijozlarimizga sifatli mahsulotlar va xizmatlar taqdim etib kelmoqda.
-    
-    🌟 **Yordam olish uchun biz bilan bog'laning!**
-    
-    - 📧 Elektron pochta: tomama@mail.ru
-    - 📞 Telefon: +998905547400
-    """
-    bot.reply_to(message, info_text, parse_mode='Markdown')
+    info_text = (
+        "📢 *Bizning Kompaniya Haqida:*\n\n"
+        "Bizning kompaniyamiz 2009-yildan buyon "
+        "o‘z mijozlariga sifatli mahsulot va xizmatlar "
+        "taqdim etib kelmoqda.\n\n"
+        "📧 Email: tomama@mail.ru\n"
+        "📞 Telefon: +998905547400"
+    )
 
-# Foydalanuvchilar uchun aloqa ma'lumotlari
+    bot.send_message(
+        message.chat.id,
+        info_text,
+        parse_mode='Markdown',
+        reply_markup=main_keyboard()
+    )
+
+
+# =======================
+# ALOQA MA'LUMOTLARI
+# =======================
 @bot.message_handler(func=lambda message: message.text == "📞 Aloqa")
 def contact_info(message):
-    contact_text = """
-    📬 **Biz bilan bog'lanish:**
-    
-    - 📧 **Email:** tomama-uz@mail.ru
-    - 📞 **Telefon raqami:** +998905547400
-    - 🕑 **Ish vaqti:** Dushanbadan Jumagacha, 9:00 - 18:00
-    """
-    bot.reply_to(message, contact_text, parse_mode='Markdown')
+    contact_text = (
+        "📬 *Biz bilan bog‘lanish:*\n\n"
+        "📧 Email: tomama-uz@mail.ru\n"
+        "📞 Telefon: +998905547400\n"
+        "🕘 Ish vaqti: 09:00 – 18:00\n"
+        "📅 Dushanba – Juma"
+    )
 
-# Saytga o'tish tugmasi
+    bot.send_message(
+        message.chat.id,
+        contact_text,
+        parse_mode='Markdown',
+        reply_markup=main_keyboard()
+    )
+
+
+# =======================
+# SAYTGA O‘TISH
+# =======================
 @bot.message_handler(func=lambda message: message.text == "🌐 Saytga O'tish")
 def open_website(message):
-    markup = telebot.types.InlineKeyboardMarkup()
-    markup.add(telebot.types.InlineKeyboardButton("🔗 Saytga O'tish", url='https://uztomama-production.up.railway.app/'))
-    bot.send_message(message.chat.id, 
-                     "👨‍💻 Bizning saytimizga o'tish uchun quyidagi tugmani bosing:", 
-                     reply_markup=markup)
+    inline = telebot.types.InlineKeyboardMarkup()
+    inline.add(
+        telebot.types.InlineKeyboardButton(
+            "🔗 Saytga o‘tish",
+            url="https://uztomama-production.up.railway.app/"
+        )
+    )
 
-# Botni ishga tushirish
-bot.polling()
+    bot.send_message(
+        message.chat.id,
+        "🌍 Saytimizga o‘tish uchun tugmani bosing:",
+        reply_markup=inline
+    )
+
+    # 🔴 MUHIM: telefonda klaviatura yo‘qolmasligi uchun
+    bot.send_message(
+        message.chat.id,
+        "⬇️ Asosiy menyu:",
+        reply_markup=main_keyboard()
+    )
+
+
+# =======================
+# BOTNI ISHGA TUSHIRISH
+# =======================
+print("Bot ishga tushdi...")
+bot.polling(none_stop=True)
