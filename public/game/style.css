@@ -1,0 +1,15 @@
+body {
+  margin: 0;
+  padding: 0;
+  background-color: #FFF5F5; /* och rangli fon */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  overflow: hidden;
+}
+
+canvas {
+  border: 2px solid #D62828; /* brend qizil chegarasi */
+  background-color: #FFF5F5;
+}
