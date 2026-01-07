@@ -23,7 +23,7 @@ def main_keyboard():
     markup.row("🌐 Saytga O'tish")
     
     # WebApp uchun maxsus klaviatura tugmasi (HTTPS majburiy!)
-    game_url = "bot-telegram-production-d731.up.railway.app"
+    game_url = "https://bot-telegram-production-d731.up.railway.app"
     webapp_info = telebot.types.WebAppInfo(url=game_url)
     markup.row(telebot.types.KeyboardButton("🎮 Tomama O‘yini", web_app=webapp_info))
     
