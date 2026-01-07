@@ -1,6 +1,6 @@
 import os
-from flask import Flask, send_from_directory, request # <-- 'request' qo'shildi
-import telebot # <-- 'telebot' import qilindi (avvalgi xato shu edi)
+from flask import Flask, send_from_directory, request
+import telebot
 
 # 1. SOZLAMALAR
 TOKEN = '8449204541:AAG8--gTH_dncxMQ5cW1eKh03ht9Y_J7seI'
@@ -11,7 +11,7 @@ app = Flask(__name__, static_folder='webapp')
 
 # Railway portini o'qib olish
 PORT = int(os.environ.get("PORT", 8080))
-# Webhook URL manzili (sizning Railway domeningiz)
+# Webhook URL manzili (sizning Railway domeningiz - HTTPS majburiy!)
 WEBHOOK_URL = f"bot-telegram-production-d731.up.railway.app{TOKEN}"
 
 # =======================
@@ -22,12 +22,13 @@ def main_keyboard():
     markup.row("🔹 Korxona Haqida", "📞 Aloqa")
     markup.row("🌐 Saytga O'tish")
     
-    # WebApp uchun maxsus klaviatura tugmasi
+    # WebApp uchun maxsus klaviatura tugmasi (HTTPS majburiy!)
     game_url = "bot-telegram-production-d731.up.railway.app"
     webapp_info = telebot.types.WebAppInfo(url=game_url)
     markup.row(telebot.types.KeyboardButton("🎮 Tomama O‘yini", web_app=webapp_info))
     
     return markup
+
 # =======================
 # BOT LOGIKASI
 # =======================
@@ -72,6 +73,7 @@ def website_handler(message):
 @bot.message_handler(func=lambda message: message.text == "🎮 Tomama O‘yini")
 def game_handler(message):
     inline = telebot.types.InlineKeyboardMarkup()
+    # WebApp URL (HTTPS majburiy!)
     game_url = "bot-telegram-production-d731.up.railway.appgame"
     inline.add(telebot.types.InlineKeyboardButton(
         text="▶️ O‘yinni boshlash",
@@ -80,7 +82,7 @@ def game_handler(message):
     bot.send_message(message.chat.id, "🍅 Tomama o‘yiniga xush kelibsiz!\nBoshlash uchun tugmani bosing 👇", reply_markup=inline)
 
 # =======================
-# FLASK VA WEBHOOK QISMI (Polling va Threading o'rniga)
+# FLASK VA WEBHOOK QISMI
 # =======================
 
 @app.route(f'/{TOKEN}', methods=['POST'])
@@ -104,7 +106,6 @@ def static_files(path):
 @app.route("/")
 def health_check():
     """Server ishlayotganini va webhook o'rnatilganini tekshiradi"""
-    # Har safar asosiy manzilga kirilganda webhookni yangilaymiz
     bot.remove_webhook()
     bot.set_webhook(url=WEBHOOK_URL)
     return "Bot is running and webhook set!", 200
@@ -114,6 +115,6 @@ def health_check():
 # =======================
 
 if __name__ == "__main__":
-    # Flask serverni ishga tushiramiz (Threading butunlay olib tashlandi)
+    # Flask serverni ishga tushiramiz (Polling/Threading usullari olib tashlandi)
     print(f"Server {PORT}-portda ishlamoqda...")
     app.run(host="0.0.0.0", port=PORT, debug=False)
