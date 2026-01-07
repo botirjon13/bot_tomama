@@ -123,3 +123,43 @@ body, html {
     margin-left: auto;
     margin-right: auto;
 }
+/* FON ELEMENTLARI KONTEYNERI */
+.bg-elements {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1; /* Menyu tagida turishi uchun */
+    overflow: hidden;
+    pointer-events: none; /* Tugmalarni bosishga xalaqit bermaydi */
+}
+
+/* UMUMIY STIL */
+.floating-item {
+    position: absolute;
+    width: 80px; /* Kattaligi */
+    opacity: 0.3; /* Juda yorqin bo'lmasligi uchun xiralashtiramiz */
+    animation: rotateAndMove 15s linear infinite;
+}
+
+/* ALOHIDA POZITSIYALAR */
+.item-1 { top: 10%; left: 10%; animation-duration: 20s; }
+.item-2 { top: 60%; left: 80%; animation-duration: 25s; animation-direction: reverse; }
+.item-3 { top: 80%; left: 20%; animation-duration: 18s; }
+
+/* AYLANISH VA HARAKAT ANIMATSIYASI */
+@keyframes rotateAndMove {
+    0% {
+        transform: rotate(0deg) translateY(0px) translateX(0px);
+    }
+    33% {
+        transform: rotate(120deg) translateY(50px) translateX(20px);
+    }
+    66% {
+        transform: rotate(240deg) translateY(-30px) translateX(40px);
+    }
+    100% {
+        transform: rotate(360deg) translateY(0px) translateX(0px);
+    }
+}
