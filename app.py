@@ -3,6 +3,8 @@ import os
 import threading
 from flask import Flask, send_from_directory
 
+app = Flask(__name__, static_folder='webapp', static_url_path='')
+
 # 1. SOZLAMALAR
 TOKEN = '8449204541:AAG8--gTH_dncxMQ5cW1eKh03ht9Y_J7seI'
 bot = telebot.TeleBot(TOKEN)
