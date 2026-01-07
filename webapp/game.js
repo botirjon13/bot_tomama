@@ -41,7 +41,15 @@ assets.otherBrand.src = 'assaets/products/other_tomato.png'; // assaets -> asset
 assets.otherBrand.onload = imageLoaded;
 assets.otherBrand.onerror = imageError;
 
-let basket = { x: canvas.width / 2 - 50, y: canvas.height - 100, width: 100, height: 70 };
+// Oldingi holat: canvas.height - 100
+// Yangi holat: canvas.height - 160 (yoki o'zingizga qulayroq masofa)
+let basket = { 
+    x: canvas.width / 2 - 60, 
+    y: canvas.height - 160, // 100 dan 160 ga o'zgartirdik, savat yuqoriga ko'tarildi
+    width: 120, 
+    height: 85 
+};
+
 let items = [];
 let score = 0;
 let lives = 3;
