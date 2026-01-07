@@ -21,17 +21,17 @@ function imageError(e) {
 
 // RASMLAR YO'LI (Diqqat: assets/ papkasi webapp ichida bo'lishi kerak)
 assets.basket = new Image();
-assets.basket.src = 'assets/basket.png';
+assets.basket.src = 'assaets/basket.png';
 assets.basket.onload = imageLoaded;
 assets.basket.onerror = imageError;
 
 assets.myBrand = new Image();
-assets.myBrand.src = 'assets/products/tomato.png';
+assets.myBrand.src = 'assaets/products/tomato.png';
 assets.myBrand.onload = imageLoaded;
 assets.myBrand.onerror = imageError;
 
 assets.otherBrand = new Image();
-assets.otherBrand.src = 'assets/products/other_tomato.png';
+assets.otherBrand.src = 'assaets/products/other_tomato.png';
 assets.otherBrand.onload = imageLoaded;
 assets.otherBrand.onerror = imageError;
 
