@@ -51,15 +51,20 @@ let spawnInterval = null; // Intervalni boshida null qildik
 
 function spawnItem() {
     if (isGameOver) return;
-    // O'yin qiyinlashgani sari tezlikni oshirish mumkin
+    
     speed = 3 + Math.floor(score / 50); 
 
     const isMyBrand = Math.random() > 0.2;
+    
+    // O'lchamlarni bu yerda belgilaymiz (masalan 65px)
+    const itemWidth = 65; 
+    const itemHeight = 65;
+
     items.push({
-        x: Math.random() * (canvas.width - 50),
-        y: -50,
-        width: 45,
-        height: 45,
+        x: Math.random() * (canvas.width - itemWidth), // Ekrandan chiqib ketmasligi uchun
+        y: -itemHeight,
+        width: itemWidth,
+        height: itemHeight,
         type: isMyBrand ? 'myBrand' : 'otherBrand',
         image: isMyBrand ? assets.myBrand : assets.otherBrand
     });
