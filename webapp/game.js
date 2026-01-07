@@ -1,136 +1,152 @@
 // ======================
-// CANVAS & CONTEXT
+// CANVAS & CONTEXT SOZLAMALARI
 // ======================
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 
+// Ekran o'lchamiga moslashtirish
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 
 // ======================
-// ASSETS
+// AKTIVLARNI YUKLASH (ASSETS)
 // ======================
+let imagesLoaded = 0;
+const totalImages = 2;
+
+function imageLoaded() {
+    imagesLoaded++;
+    if (imagesLoaded === totalImages) {
+        update(); // Ikkala rasm yuklangach o'yinni boshlash
+    }
+}
+
 const basketImg = new Image();
-basketImg.src = 'assets/basket.png'; // savat rasm
+basketImg.src = 'assets/basket.png';
+basketImg.onload = imageLoaded;
+basketImg.onerror = () => console.error("Savat rasmi topilmadi!");
 
 const productImg = new Image();
-productImg.src = 'assets/products/tomato.png'; // tomama bankasi
+productImg.src = 'assets/products/tomato.png';
+productImg.onload = imageLoaded;
+productImg.onerror = () => console.error("Pomidor rasmi topilmadi!");
 
 // ======================
-// GAME VARIABLES
+// O'YIN O'ZGARUVCHILARI
 // ======================
 let basket = {
-  x: canvas.width / 2 - 50,
-  y: canvas.height - 120,
-  width: 100,
-  height: 80
+    x: canvas.width / 2 - 50,
+    y: canvas.height - 100,
+    width: 100,
+    height: 70
 };
 
 let products = [];
 let score = 0;
-let speed = 2;
+let speed = 3;
+let isGameOver = false;
 
 // ======================
-// SPAWN PRODUCTS
+// MAHSULOTLARNI YARATISH
 // ======================
 function spawnProduct() {
-  products.push({
-    x: Math.random() * (canvas.width - 50),
-    y: -50,
-    width: 50,
-    height: 50
-  });
+    if (isGameOver) return;
+    products.push({
+        x: Math.random() * (canvas.width - 50),
+        y: -50,
+        width: 40,
+        height: 40
+    });
 }
 
-// Har 1 soniyada yangi product
-setInterval(spawnProduct, 1000);
+// Har 1.2 soniyada yangi mahsulot tushadi
+let spawnInterval = setInterval(spawnProduct, 1200);
 
 // ======================
-// GAME LOOP
+// ASOSIY O'YIN TSIKLI (LOOP)
 // ======================
 function update() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
+    if (isGameOver) return;
 
-  // --- Draw basket ---
-  ctx.drawImage(basketImg, basket.x, basket.y, basket.width, basket.height);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  // --- Draw products ---
-  for (let i = 0; i < products.length; i++) {
-    const p = products[i];
-    p.y += speed;
+    // 1. Savatni chizish
+    ctx.drawImage(basketImg, basket.x, basket.y, basket.width, basket.height);
 
-    ctx.drawImage(productImg, p.x, p.y, p.width, p.height);
+    // 2. Mahsulotlarni harakatlantirish va chizish
+    for (let i = 0; i < products.length; i++) {
+        let p = products[i];
+        p.y += speed;
 
-    // --- Collision ---
-    if (p.y + p.height >= basket.y &&
-        p.x + p.width >= basket.x &&
-        p.x <= basket.x + basket.width) {
-      score += 1;
-      products.splice(i, 1);
-      i--;
+        ctx.drawImage(productImg, p.x, p.y, p.width, p.height);
+
+        // To'qnashuvni tekshirish (Savatga tushsa)
+        if (p.y + p.height >= basket.y &&
+            p.x + p.width >= basket.x &&
+            p.x <= basket.x + basket.width) {
+            score += 1;
+            products.splice(i, 1);
+            i--;
+            // Har 10 ochkoda tezlikni oshirish
+            if (score % 10 === 0) speed += 0.5;
+            continue;
+        }
+
+        // Yerga tushsa - O'yin tugadi
+        if (p.y > canvas.height) {
+            gameOver();
+            return;
+        }
     }
 
-    // --- Missed product: game over ---
-    if (p.y > canvas.height) {
-      gameOver();
-      return;
-    }
-  }
+    // 3. Ochkoni ekranga chiqarish
+    ctx.fillStyle = '#D62828';
+    ctx.font = 'bold 24px Arial';
+    ctx.fillText('Ochko: ' + score, 20, 40);
 
-  // --- Score display ---
-  ctx.fillStyle = '#D62828'; // brend qizil rangi
-  ctx.font = '28px Arial';
-  ctx.fillText('Score: ' + score, 20, 40);
-
-  requestAnimationFrame(update);
+    requestAnimationFrame(update);
 }
 
 // ======================
-// BASKET MOVEMENT (MOBILE)
+// BOSHQARUV (TOUCH & MOUSE)
 // ======================
-canvas.addEventListener('touchmove', function(e) {
-  basket.x = e.touches[0].clientX - basket.width / 2;
-});
+function moveBasket(e) {
+    let clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    basket.x = clientX - basket.width / 2;
+
+    // Ekrandan chiqib ketmasligi uchun
+    if (basket.x < 0) basket.x = 0;
+    if (basket.x > canvas.width - basket.width) basket.x = canvas.width - basket.width;
+}
+
+canvas.addEventListener('touchmove', (e) => {
+    e.preventDefault();
+    moveBasket(e);
+}, { passive: false });
+
+canvas.addEventListener('mousemove', moveBasket);
 
 // ======================
-// BACKEND INTEGRATION
+// O'YINNI TUGATISH
 // ======================
 function gameOver() {
-  const user = Telegram.WebApp.initDataUnsafe.user;
+    isGameOver = true;
+    clearInterval(spawnInterval);
 
-  fetch('https://your-backend-url/submit-score', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      telegram_id: user.id,
-      name: user.first_name,
-      score: score
-    })
-  });
+    let userName = "Mehmon";
+    if (window.Telegram && Telegram.WebApp && Telegram.WebApp.initDataUnsafe.user) {
+        userName = Telegram.WebApp.initDataUnsafe.user.first_name;
+    }
 
-  alert('O‘yin tugadi! Score yuborildi 🎉');
-  showTop10();
-  window.location.reload(); // o‘yinni qayta boshlash
+    alert(`O‘yin tugadi! \nFoydalanuvchi: ${userName}\nSizning natijangiz: ${score}`);
+    
+    // O'yinni qayta yuklash
+    location.reload();
 }
 
-// Top-10 reytingni olish
-async function showTop10() {
-  try {
-    const res = await fetch('https://your-backend-url/top10');
-    const data = await res.json();
-
-    let text = "🏆 Top 10 Reyting:\n";
-    data.forEach((item, idx) => {
-      text += `${idx+1}. ${item.name}: ${item.score}\n`;
-    });
-
-    alert(text);
-  } catch (err) {
-    console.error('Top-10 olishda xato:', err);
-  }
-}
-
-// ======================
-// START GAME
-// ======================
-update();
+// Ekran o'lchami o'zgarganda canvasni moslashtirish
+window.addEventListener('resize', () => {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    basket.y = canvas.height - 100;
+});
