@@ -92,7 +92,7 @@ def open_website(message):
     inline.add(
         telebot.types.InlineKeyboardButton(
             "🔗 Saytga o‘tish",
-            url="https://uztomama-production.up.railway.app/"
+            url="https://bot-telegram-production-d731.up.railway.app/"
         )
     )
     bot.send_message(
