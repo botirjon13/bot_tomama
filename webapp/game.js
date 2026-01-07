@@ -117,11 +117,15 @@ function update() {
 function moveBasket(e) {
     e.preventDefault();
     let clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    
+    // Savat barmog'ingizdan 40-50 piksel yuqorida yursin
     basket.x = clientX - basket.width / 2;
-    // Savatni ekran chegarasida ushlab turish
+
+    // Chegaradan chiqib ketmasligi uchun
     if (basket.x < 0) basket.x = 0;
     if (basket.x + basket.width > canvas.width) basket.x = canvas.width - basket.width;
 }
+
 
 canvas.addEventListener('touchmove', moveBasket, { passive: false });
 canvas.addEventListener('mousemove', moveBasket);
