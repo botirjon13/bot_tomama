@@ -1,8 +1,6 @@
 import telebot
 
-# Bot tokeni
 TOKEN = '8449204541:AAG8--gTH_dncxMQ5cW1eKh03ht9Y_J7seI'
-
 bot = telebot.TeleBot(TOKEN)
 
 # =======================
@@ -13,14 +11,11 @@ def main_keyboard():
         resize_keyboard=True,
         one_time_keyboard=False
     )
-
-    # Har bir tugma alohida qatorda
     markup.add(telebot.types.KeyboardButton("🔹 Korxona Haqida"))
     markup.add(telebot.types.KeyboardButton("📞 Aloqa"))
     markup.add(telebot.types.KeyboardButton("🌐 Saytga O'tish"))
-
+    markup.add(telebot.types.KeyboardButton("🎮 Tomama O‘yini"))  # yangi tugma
     return markup
-
 
 # =======================
 # /start komandasi
@@ -34,9 +29,28 @@ def send_welcome(message):
         reply_markup=main_keyboard()
     )
 
+# =======================
+# Tomama O‘yini tugmasi
+# =======================
+@bot.message_handler(func=lambda message: message.text == "🎮 Tomama O‘yini")
+def open_game(message):
+    inline = telebot.types.InlineKeyboardMarkup()
+    inline.add(
+        telebot.types.InlineKeyboardButton(
+            text="▶️ O‘yinni boshlash",
+            web_app=telebot.types.WebAppInfo(
+                url="https://uztomama-production.up.railway.app/game"  # sizning Web App URL
+            )
+        )
+    )
+    bot.send_message(
+        message.chat.id,
+        "🍅 Tomama o‘yiniga xush kelibsiz!\nBoshlash uchun tugmani bosing 👇",
+        reply_markup=inline
+    )
 
 # =======================
-# KORXONA HAQIDA
+# Korxona Haqida va Aloqa
 # =======================
 @bot.message_handler(func=lambda message: message.text == "🔹 Korxona Haqida")
 def send_info(message):
@@ -48,7 +62,6 @@ def send_info(message):
         "📧 Email: tomama-uz@mail.ru\n"
         "📞 Telefon: +998905547400"
     )
-
     bot.send_message(
         message.chat.id,
         info_text,
@@ -56,10 +69,6 @@ def send_info(message):
         reply_markup=main_keyboard()
     )
 
-
-# =======================
-# ALOQA MA'LUMOTLARI
-# =======================
 @bot.message_handler(func=lambda message: message.text == "📞 Aloqa")
 def contact_info(message):
     contact_text = (
@@ -69,7 +78,6 @@ def contact_info(message):
         "🕘 Ish vaqti: 09:00 – 18:00\n"
         "📅 Dushanba – Juma"
     )
-
     bot.send_message(
         message.chat.id,
         contact_text,
@@ -77,11 +85,7 @@ def contact_info(message):
         reply_markup=main_keyboard()
     )
 
-
-# =======================
-# SAYTGA O‘TISH
-# =======================
-@bot.message_handler(func=lambda message: message.text == "🌐 Saytga O'tish")
+@bot.message_handler(func=lambda message: message.text == "🌐 Saytga O‘Tish")
 def open_website(message):
     inline = telebot.types.InlineKeyboardMarkup()
     inline.add(
@@ -90,23 +94,19 @@ def open_website(message):
             url="https://uztomama-production.up.railway.app/"
         )
     )
-
     bot.send_message(
         message.chat.id,
         "🌍 Saytimizga o‘tish uchun tugmani bosing:",
         reply_markup=inline
     )
-
-    # 🔴 MUHIM: telefonda klaviatura yo‘qolmasligi uchun
     bot.send_message(
         message.chat.id,
         "⬇️ Asosiy menyu:",
         reply_markup=main_keyboard()
     )
 
-
 # =======================
-# BOTNI ISHGA TUSHIRISH
+# Botni ishga tushirish
 # =======================
 print("Bot ishga tushdi...")
 bot.polling(none_stop=True)
