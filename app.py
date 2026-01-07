@@ -10,8 +10,68 @@ app = Flask(__name__, static_folder='webapp')
 PORT = int(os.environ.get("PORT", 8080))
 
 # =======================
-# FLASK QISMI (Veb-sayt va O'yin uchun)
+# KLAWIATURA (Tugmalar matni bu yerda)
 # =======================
+def main_keyboard():
+    markup = telebot.types.ReplyKeyboardMarkup(resize_keyboard=True)
+    markup.row("🔹 Korxona Haqida", "📞 Aloqa")
+    markup.row("🌐 Saytga O'tish", "🎮 Tomama O‘yini")
+    return markup
+
+# =======================
+# BOT LOGIKASI
+# =======================
+
+@bot.message_handler(commands=['start'])
+def send_welcome(message):
+    bot.send_message(
+        message.chat.id, 
+        "✨ Salom! Tomama rasmiy botiga xush kelibsiz!\nQuyidagi tugmalardan foydalaning 👇", 
+        reply_markup=main_keyboard()
+    )
+
+@bot.message_handler(func=lambda message: message.text == "🔹 Korxona Haqida")
+def info_handler(message):
+    text = (
+        "📢 *Bizning Kompaniya Haqida:*\n\n"
+        "Bizning kompaniyamiz 2009-yildan buyon "
+        "o‘z mijozlariga sifatli mahsulot va xizmatlar "
+        "taqdim etib kelmoqda.\n\n"
+        "📧 Email: tomama-uz@mail.ru\n"
+        "📞 Telefon: +998905547400"
+    )
+    bot.send_message(message.chat.id, text, parse_mode='Markdown')
+
+@bot.message_handler(func=lambda message: message.text == "📞 Aloqa")
+def contact_handler(message):
+    text = (
+        "📬 *Biz bilan bog‘lanish:*\n\n"
+        "📧 Email: tomama-uz@mail.ru\n"
+        "📞 Telefon: +998905547400\n"
+        "🕘 Ish vaqti: 09:00 – 18:00\n"
+        "📅 Dushanba – Juma"
+    )
+    bot.send_message(message.chat.id, text, parse_mode='Markdown')
+
+@bot.message_handler(func=lambda message: message.text == "🌐 Saytga O'tish")
+def website_handler(message):
+    inline = telebot.types.InlineKeyboardMarkup()
+    inline.add(telebot.types.InlineKeyboardButton("🔗 Saytga o‘tish", url="http://www.tomama.uz"))
+    bot.send_message(message.chat.id, "🌍 Saytimizga o‘tish uchun pastdagi tugmani bosing:", reply_markup=inline)
+
+@bot.message_handler(func=lambda message: message.text == "🎮 Tomama O‘yini")
+def game_handler(message):
+    inline = telebot.types.InlineKeyboardMarkup()
+    inline.add(telebot.types.InlineKeyboardButton(
+        text="▶️ O‘yinni boshlash",
+        web_app=telebot.types.WebAppInfo(url="uztomama-production.up.railway.app")
+    ))
+    bot.send_message(message.chat.id, "🍅 Tomama o‘yiniga xush kelibsiz!\nBoshlash uchun tugmani bosing 👇", reply_markup=inline)
+
+# =======================
+# FLASK VA SERVER QISMI
+# =======================
+
 @app.route("/game")
 def game():
     return send_from_directory('webapp', 'index.html')
@@ -21,46 +81,18 @@ def static_files(path):
     return send_from_directory('webapp', path)
 
 @app.route("/")
-def index():
-    return "Bot va O'yin ishlamoqda!"
+def health_check():
+    return "Bot is running!", 200
 
-# =======================
-# BOT QISMI (Siz yuborgan kod)
-# =======================
-def main_keyboard():
-    markup = telebot.types.ReplyKeyboardMarkup(resize_keyboard=True)
-    markup.add("🔹 Korxona Haqida", "📞 Aloqa")
-    markup.add("🌐 Saytga O'tish", "🎮 Tomama O‘yini")
-    return markup
-
-@bot.message_handler(commands=['start'])
-def send_welcome(message):
-    bot.send_message(message.chat.id, "✨ Salom! Botga xush kelibsiz!", reply_markup=main_keyboard())
-
-@bot.message_handler(func=lambda message: message.text == "🎮 Tomama O‘yini")
-def open_game(message):
-    inline = telebot.types.InlineKeyboardMarkup()
-    inline.add(telebot.types.InlineKeyboardButton(
-        text="▶️ O‘yinni boshlash",
-        web_app=telebot.types.WebAppInfo(url="https://uztomama-production.up.railway.app/game")
-    ))
-    bot.send_message(message.chat.id, "🍅 O'yinni boshlang:", reply_markup=inline)
-
-# Korxona va Aloqa funksiyalarini ham shu yerga qo'shib qo'ying (Siz yozgan kod)
-
-# =======================
-# IKKALASINI BIRGA ISHLATISH
-# =======================
 def run_bot():
     print("Bot polling boshlandi...")
     bot.infinity_polling()
 
 if __name__ == "__main__":
-    # Botni alohida oqimda (Thread) ishga tushiramiz
-    bot_thread = threading.Thread(target=run_bot)
-    bot_thread.daemon = True
-    bot_thread.start()
-
-    # Flaskni asosiy oqimda ishga tushiramiz
-    print(f"Server {PORT}-portda ishga tushdi...")
+    # Botni orqa fonda ishga tushirish
+    t = threading.Thread(target=run_bot)
+    t.daemon = True
+    t.start()
+    
+    # Flaskni asosiy portda ishga tushirish
     app.run(host="0.0.0.0", port=PORT)
