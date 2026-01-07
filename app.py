@@ -16,4 +16,6 @@ def static_proxy(path):
     return send_from_directory('webapp', path)
 
 if __name__ == "__main__":
+    import os
+    PORT = int(os.environ.get("PORT", 8080))  # Railway portni oladi
     app.run(host="0.0.0.0", port=PORT)
