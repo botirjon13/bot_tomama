@@ -20,6 +20,11 @@ body, html {
     -webkit-user-select: none;
 }
 
+/* YASHIRISH KLASSI */
+.hidden {
+    display: none !important;
+}
+
 /* O'YIN MAYDONI (CANVAS) */
 #gameCanvas {
     display: block;
@@ -28,19 +33,65 @@ body, html {
     height: 100vh;
 }
 
-/* O'YIN HUD (Jonlar, Ochko) */
-.hud {
+/* MENYU STILLARI */
+.menu-container {
     position: absolute;
-    top: 10px;
-    display: flex;
-    justify-content: space-between;
+    top: 0;
+    left: 0;
     width: 100%;
-    padding: 0 15px;
-    pointer-events: none;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: rgba(255, 245, 245, 0.95);
+    z-index: 10;
 }
 
-.hud-item {
-    color: #D62828;
-    font-size: 20px;
-    font-weight: bold;
+.menu-box {
+    text-align: center;
+    padding: 20px;
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    max-width: 80%;
 }
+
+.menu-box h1, .menu-box h2 {
+    color: #D62828;
+    margin-bottom: 20px;
+}
+
+.menu-box button {
+    display: block;
+    width: 100%;
+    padding: 15px;
+    margin-bottom: 10px;
+    font-size: 18px;
+    color: white;
+    background-color: #00BFFF; /* Chiroyli ko'k rang */
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.menu-box button:hover {
+    background-color: #0099cc;
+}
+
+/* RO'YXAT STILLARI (Reyting va Kuponlar) */
+#rankingList, #couponList {
+    list-style: none;
+    padding: 0;
+    margin-bottom: 20px;
+}
+
+#rankingList li, #couponList li {
+    padding: 10px;
+    border-bottom: 1px solid #eee;
+    text-align: left;
+    color: #333;
+}
+
+.active { color: green !important; font-weight: bold; }
+.used { color: gray !important; text-decoration: line-through; }
