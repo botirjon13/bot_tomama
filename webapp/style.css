@@ -1,15 +1,54 @@
-body {
-  margin: 0;
-  padding: 0;
-  background-color: #FFF5F5; /* och rangli fon */
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100vh;
-  overflow: hidden;
+/* 1. ASOSIY SOZLAMALAR */
+* {
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent; /* Mobil bosishdagi ko'k fonni o'chiradi */
 }
 
-canvas {
-  border: 2px solid #D62828; /* brend qizil chegarasi */
-  background-color: #FFF5F5;
+body, html {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden; /* Ekran skroll bo'lishini taqiqlaydi */
+    background-color: #FFF5F5; /* Tomama brendiga mos och fon */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-family: 'Arial', sans-serif;
+    
+    /* Mobil qurilmalarda ekranni ushlab turganda skroll bo'lmasligi uchun */
+    touch-action: none; 
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+/* 2. O'YIN MAYDONI (CANVAS) */
+#gameCanvas {
+    display: block;
+    background-color: #FFF5F5;
+    /* Canvasni telefon ekraniga to'liq yoyish */
+    width: 100vw;
+    height: 100vh;
+    
+    /* Brend qizil chegarasi (ixtiyoriy, agar xohlasangiz) */
+    /* border: 2px solid #D62828; */
+}
+
+/* 3. YUKLANISH VA MATNLAR UCHUN (RESERVE) */
+.score-board {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    color: #D62828;
+    font-size: 24px;
+    font-weight: bold;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+    pointer-events: none; /* O'yinga xalaqit bermasligi uchun */
+}
+
+/* 4. MOBIL OPTIMIZATSIYA */
+@media (max-width: 600px) {
+    body {
+        background-color: #FFFFFF; /* Mobil uchun toza oq fon */
+    }
 }
