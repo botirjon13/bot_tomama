@@ -35,11 +35,12 @@ def send_welcome(message):
 @bot.message_handler(func=lambda message: message.text == "🎮 Tomama O‘yini")
 def open_game(message):
     inline = telebot.types.InlineKeyboardMarkup()
+    # WebApp tugmasi
     inline.add(
         telebot.types.InlineKeyboardButton(
             text="▶️ O‘yinni boshlash",
             web_app=telebot.types.WebAppInfo(
-                url="https://uztomama-production.up.railway.app/game"  # sizning Web App URL
+                url="https://uztomama-production.up.railway.app/game"  # sizning URL
             )
         )
     )
