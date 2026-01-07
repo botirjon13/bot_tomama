@@ -2,13 +2,48 @@
 <html lang="uz">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Tomama O‘yini</title>
+  
+  <!-- Telegram WebApp Scripti (BU SHART!) -->
+  <script src="telegram.org"></script>
+  
   <link rel="stylesheet" href="style.css">
+  <style>
+    /* O'yin oynasi mobil qurilmada to'liq chiqishi uchun qo'shimcha stil */
+    body, html {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: #FFF5F5;
+      touch-action: none; /* Brauzer skrollingini o'chiradi */
+    }
+    canvas {
+      display: block;
+      width: 100vw;
+      height: 100vh;
+    }
+  </style>
 </head>
 <body>
+
+  <!-- O'yin chiziladigan maydon -->
   <canvas id="gameCanvas"></canvas>
 
+  <script>
+    // Telegram WebApp ni ishga tushirish va ranglarini sozlash
+    const tg = window.Telegram.WebApp;
+    tg.expand(); // O'yin oynasini to'liq ekranga yoyish
+    tg.ready();
+
+    // Ranglarni Telegram mavzusiga moslash (ixtiyoriy)
+    document.body.style.backgroundColor = tg.backgroundColor || "#FFF5F5";
+  </script>
+
+  <!-- O'yin mantiqi -->
   <script src="game.js"></script>
+
 </body>
 </html>
