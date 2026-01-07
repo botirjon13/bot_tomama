@@ -1,15 +1,16 @@
-import telebot
 import os
-import threading
-from flask import Flask, send_from_directory
+from flask import Flask, send_from_directory, request
+import telebot
 
 # 1. SOZLAMALAR
 TOKEN = '8449204541:AAG8--gTH_dncxMQ5cW1eKh03ht9Y_J7seI'
 bot = telebot.TeleBot(TOKEN)
-
-# Flaskni bir marta va to'g'ri sozlaymiz
 app = Flask(__name__, static_folder='webapp')
+
+# Railway portini o'qib olish
 PORT = int(os.environ.get("PORT", 8080))
+# Webhook URL manzili (sizning Railway domeningiz)
+WEBHOOK_URL = f"bot-telegram-production-d731.up.railway.app{TOKEN}"
 
 # =======================
 # KLAWIATURA
@@ -64,8 +65,7 @@ def website_handler(message):
 @bot.message_handler(func=lambda message: message.text == "🎮 Tomama O‘yini")
 def game_handler(message):
     inline = telebot.types.InlineKeyboardMarkup()
-    # URL oxiriga / belgisini qo'shish tavsiya etiladi
-    game_url = "https://bot-telegram-production-d731.up.railway.app/game"
+    game_url = "bot-telegram-production-d731.up.railway.appgame"
     inline.add(telebot.types.InlineKeyboardButton(
         text="▶️ O‘yinni boshlash",
         web_app=telebot.types.WebAppInfo(url=game_url)
@@ -73,37 +73,39 @@ def game_handler(message):
     bot.send_message(message.chat.id, "🍅 Tomama o‘yiniga xush kelibsiz!\nBoshlash uchun tugmani bosing 👇", reply_markup=inline)
 
 # =======================
-# FLASK VA SERVER QISMI
+# FLASK VA WEBHOOK QISMI (Polling o'rniga)
 # =======================
+
+@app.route(f'/{TOKEN}', methods=['POST'])
+def get_message():
+    """Telegramdan kelgan xabarlarni qabul qilib, botga uzatadi"""
+    json_string = request.get_data().decode('utf-8')
+    update = telebot.types.Update.de_json(json_string)
+    bot.process_new_updates([update])
+    return "!", 200
 
 @app.route("/game")
 def game_page():
-    # Index.html faylini webapp papkasidan yuborish
+    """O'yin (WebApp) sahifasini yuklaydi"""
     return send_from_directory(app.static_folder, 'index.html')
 
 @app.route("/<path:path>")
 def static_files(path):
-    # assets, game.js va boshqa fayllarni yuborish
+    """Assets, JS, CSS kabi statik fayllarni tarqatadi"""
     return send_from_directory(app.static_folder, path)
 
 @app.route("/")
 def health_check():
-    return "Bot is running!", 200
+    """Server ishlayotganini va webhook o'rnatilganini tekshiradi"""
+    bot.remove_webhook()
+    bot.set_webhook(url=WEBHOOK_URL)
+    return "Bot is running and webhook set!", 200
 
 # =======================
 # ISHGA TUSHIRISH
 # =======================
 
-def run_bot():
-    print("Bot polling boshlandi...")
-    bot.infinity_polling(none_stop=True)
-
 if __name__ == "__main__":
-    # Botni alohida oqimda (thread) ishga tushiramiz
-    bot_thread = threading.Thread(target=run_bot)
-    bot_thread.daemon = True
-    bot_thread.start()
-    
-    # Flask serverni ishga tushiramiz
+    # Flask serverni ishga tushiramiz (Pollling va Threading olib tashlandi)
     print(f"Server {PORT}-portda ishlamoqda...")
-    app.run(host="0.0.0.0", port=PORT)
+    app.run(host="0.0.0.0", port=PORT, debug=False)
