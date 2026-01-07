@@ -1,129 +1,152 @@
 // ======================
-// CANVAS & CONTEXT SOZLAMALARI
+// CANVAS & CONTEXT
 // ======================
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 
-// Ekran o'lchamiga moslashtirish
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 
 // ======================
 // AKTIVLARNI YUKLASH (ASSETS)
 // ======================
-let imagesLoaded = 0;
-const totalImages = 2;
+let assets = {};
+let imagesToLoad = 3;
 
 function imageLoaded() {
-    imagesLoaded++;
-    if (imagesLoaded === totalImages) {
-        update(); // Ikkala rasm yuklangach o'yinni boshlash
+    imagesToLoad--;
+    if (imagesToLoad === 0) {
+        update(); // Hammasi yuklangach boshlash
     }
 }
 
-const basketImg = new Image();
-basketImg.src = 'assets/basket.png';
-basketImg.onload = imageLoaded;
-basketImg.onerror = () => console.error("Savat rasmi topilmadi!");
+assets.basket = new Image();
+assets.basket.src = 'assets/basket.png';
+assets.basket.onload = imageLoaded;
 
-const productImg = new Image();
-productImg.src = 'assets/products/tomato.png';
-productImg.onload = imageLoaded;
-productImg.onerror = () => console.error("Pomidor rasmi topilmadi!");
+assets.myBrand = new Image();
+assets.myBrand.src = 'assets/products/tomato.png'; // Sizning brendingiz
+assets.myBrand.onload = imageLoaded;
+
+assets.otherBrand = new Image();
+assets.otherBrand.src = 'assets/products/other_tomato.png'; // Boshqa brend (Bu fayl bo'lishi kerak!)
+assets.otherBrand.onload = imageLoaded;
+
 
 // ======================
 // O'YIN O'ZGARUVCHILARI
 // ======================
-let basket = {
-    x: canvas.width / 2 - 50,
-    y: canvas.height - 100,
-    width: 100,
-    height: 70
-};
-
-let products = [];
+let basket = { x: canvas.width / 2 - 50, y: canvas.height - 100, width: 100, height: 70 };
+let items = [];
 let score = 0;
+let lives = 3;
 let speed = 3;
+let level = 1;
 let isGameOver = false;
 
 // ======================
-// MAHSULOTLARNI YARATISH
+// BUYUMLARNI YARATISH
 // ======================
-function spawnProduct() {
+function spawnItem() {
     if (isGameOver) return;
-    products.push({
+
+    // 80% ehtimol bilan sizning brendingiz, 20% boshqa brend tushadi
+    const isMyBrand = Math.random() > 0.2;
+    const type = isMyBrand ? 'myBrand' : 'otherBrand';
+    const image = isMyBrand ? assets.myBrand : assets.otherBrand;
+
+    items.push({
         x: Math.random() * (canvas.width - 50),
         y: -50,
         width: 40,
-        height: 40
+        height: 40,
+        type: type,
+        image: image
     });
 }
 
-// Har 1.2 soniyada yangi mahsulot tushadi
-let spawnInterval = setInterval(spawnProduct, 1200);
+let spawnInterval = setInterval(spawnItem, 800);
 
 // ======================
-// ASOSIY O'YIN TSIKLI (LOOP)
+// ASOSIY O'YIN TSIKLI
 // ======================
 function update() {
     if (isGameOver) return;
-
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     // 1. Savatni chizish
-    ctx.drawImage(basketImg, basket.x, basket.y, basket.width, basket.height);
+    ctx.drawImage(assets.basket, basket.x, basket.y, basket.width, basket.height);
 
-    // 2. Mahsulotlarni harakatlantirish va chizish
-    for (let i = 0; i < products.length; i++) {
-        let p = products[i];
+    // 2. Buyumlarni chizish va tekshirish
+    for (let i = 0; i < items.length; i++) {
+        let p = items[i];
         p.y += speed;
 
-        ctx.drawImage(productImg, p.x, p.y, p.width, p.height);
+        ctx.drawImage(p.image, p.x, p.y, p.width, p.height);
 
-        // To'qnashuvni tekshirish (Savatga tushsa)
+        // To'qnashuvni tekshirish
         if (p.y + p.height >= basket.y &&
             p.x + p.width >= basket.x &&
             p.x <= basket.x + basket.width) {
-            score += 1;
-            products.splice(i, 1);
+            
+            if (p.type === 'myBrand') {
+                score += 1;
+            } else {
+                lives -= 1; // Boshqa brend uchun jon ketadi!
+            }
+            items.splice(i, 1);
             i--;
-            // Har 10 ochkoda tezlikni oshirish
-            if (score % 10 === 0) speed += 0.5;
+            
+            if (lives <= 0) {
+                gameOver();
+                return;
+            }
+
+            // Har 10 ochkoda level va tezlik oshadi
+            if (score % 10 === 0 && score > 0) {
+                level += 1;
+                speed += 1;
+                clearInterval(spawnInterval);
+                spawnInterval = setInterval(spawnItem, Math.max(400, 800 - (level * 50)));
+            }
             continue;
         }
 
-        // Yerga tushsa - O'yin tugadi
+        // Yerga tushsa (sizning brendingiz bo'lsa ham tushirib yuborish mumkin emasmi?)
         if (p.y > canvas.height) {
-            gameOver();
-            return;
+             if (p.type === 'myBrand') {
+                 lives -= 1; // Agar o'z brendingizni ham tushirsangiz jon ketadi (agar shunday xohlasangiz)
+                 if (lives <= 0) {
+                     gameOver();
+                     return;
+                 }
+             }
+            items.splice(i, 1);
+            i--;
         }
     }
 
-    // 3. Ochkoni ekranga chiqarish
+    // 3. HUD (Ochko, Jonlar, Level)
     ctx.fillStyle = '#D62828';
-    ctx.font = 'bold 24px Arial';
-    ctx.fillText('Ochko: ' + score, 20, 40);
+    ctx.font = 'bold 18px Arial';
+    ctx.fillText('Ochko: ' + score, 10, 25);
+    ctx.fillText('Jonlar: ' + '❤️'.repeat(lives), canvas.width / 2 - 30, 25);
+    ctx.fillText('Level: ' + level, canvas.width - 70, 25);
 
     requestAnimationFrame(update);
 }
 
 // ======================
-// BOSHQARUV (TOUCH & MOUSE)
+// BOSHQARUV
 // ======================
 function moveBasket(e) {
     let clientX = e.touches ? e.touches[0].clientX : e.clientX;
     basket.x = clientX - basket.width / 2;
-
-    // Ekrandan chiqib ketmasligi uchun
     if (basket.x < 0) basket.x = 0;
     if (basket.x > canvas.width - basket.width) basket.x = canvas.width - basket.width;
 }
 
-canvas.addEventListener('touchmove', (e) => {
-    e.preventDefault();
-    moveBasket(e);
-}, { passive: false });
-
+canvas.addEventListener('touchmove', moveBasket, { passive: false });
 canvas.addEventListener('mousemove', moveBasket);
 
 // ======================
@@ -132,21 +155,33 @@ canvas.addEventListener('mousemove', moveBasket);
 function gameOver() {
     isGameOver = true;
     clearInterval(spawnInterval);
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = '#FFFFFF';
+    ctx.font = 'bold 30px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText('O‘YIN TUGADI! 🎮', canvas.width / 2, canvas.height / 2);
+    ctx.fillText('Natija: ' + score, canvas.width / 2, canvas.height / 2 + 40);
+    ctx.textAlign = 'left';
 
-    let userName = "Mehmon";
-    if (window.Telegram && Telegram.WebApp && Telegram.WebApp.initDataUnsafe.user) {
-        userName = Telegram.WebApp.initDataUnsafe.user.first_name;
-    }
-
-    alert(`O‘yin tugadi! \nFoydalanuvchi: ${userName}\nSizning natijangiz: ${score}`);
-    
-    // O'yinni qayta yuklash
-    location.reload();
+    // Telegram API orqali backendga score yuborish logikasi shu yerga keladi
+    submitScoreToBackend(score);
 }
 
-// Ekran o'lchami o'zgarganda canvasni moslashtirish
-window.addEventListener('resize', () => {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-    basket.y = canvas.height - 100;
-});
+function submitScoreToBackend(finalScore) {
+    // Backend API ulanmaguncha bu qism ishlamaydi
+    console.log(`Backendga yuboriladigan score: ${finalScore}`);
+    
+    // Foydalanuvchini bilish uchun:
+    const user = window.Telegram.WebApp.initDataUnsafe.user;
+    if (user) {
+        console.log(`Foydalanuvchi IDsi: ${user.id}, Ismi: ${user.first_name}`);
+        // fetch('https://your-backend-url/submit-score', ...)
+    }
+
+    // Test uchun alert
+    setTimeout(() => {
+        alert(`O'yin tugadi!\nNatija: ${finalScore}\nReyting tizimi hozircha front-endda ulanmagan.`);
+        location.reload();
+    }, 2000);
+}
