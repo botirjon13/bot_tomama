@@ -20,9 +20,14 @@ WEBHOOK_URL = f"bot-telegram-production-d731.up.railway.app{TOKEN}"
 def main_keyboard():
     markup = telebot.types.ReplyKeyboardMarkup(resize_keyboard=True)
     markup.row("🔹 Korxona Haqida", "📞 Aloqa")
-    markup.row("🌐 Saytga O'tish", "🎮 Tomama O‘yini")
+    markup.row("🌐 Saytga O'tish")
+    
+    # WebApp uchun maxsus klaviatura tugmasi
+    game_url = "bot-telegram-production-d731.up.railway.app"
+    webapp_info = telebot.types.WebAppInfo(url=game_url)
+    markup.row(telebot.types.KeyboardButton("🎮 Tomama O‘yini", web_app=webapp_info))
+    
     return markup
-
 # =======================
 # BOT LOGIKASI
 # =======================
