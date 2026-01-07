@@ -115,11 +115,12 @@ body, html {
     margin-top: 10px;
 }
 .game-logo {
-    width: 80%;       /* Сделает логотип адаптивным по ширине меню */
-    max-width: 250px; /* Чтобы на больших экранах лого не было гигантским */
-    height: auto;     /* Сохраняет пропорции */
-    margin-bottom: 25px; /* Отступ от кнопок */
+    width: 200px;         /* Rasmni o'zingizga yoqqan kenglikda belgilang */
+    height: auto;         /* Proporsiyani saqlaydi */
+    margin-bottom: 25px;  /* Tugmalardan masofa qoldiradi */
     display: block;
     margin-left: auto;
     margin-right: auto;
+    /* 2026-yil dizayn trendi: logotipga yengil soya berish */
+    filter: drop-shadow(0 5px 15px rgba(0,0,0,0.1));
 }
