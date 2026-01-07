@@ -3,26 +3,16 @@ import os
 import threading
 from flask import Flask, send_from_directory
 
-app = Flask(__name__, static_folder='webapp', static_url_path='')
-
 # 1. SOZLAMALAR
 TOKEN = '8449204541:AAG8--gTH_dncxMQ5cW1eKh03ht9Y_J7seI'
 bot = telebot.TeleBot(TOKEN)
+
+# Flaskni bir marta va to'g'ri sozlaymiz
 app = Flask(__name__, static_folder='webapp')
 PORT = int(os.environ.get("PORT", 8080))
 
-# Importlardan keyin, TOKEN qatoridan oldin qo'shing
-def start_bot_in_background():
-    print("Bot orqa fonda ishga tushirilmoqda...")
-    t = threading.Thread(target=lambda: bot.infinity_polling(none_stop=True))
-    t.daemon = True
-    t.start()
-
-# Botni darhol ishga tushiramiz
-start_bot_in_background()
-
 # =======================
-# KLAWIATURA (Tugmalar matni bu yerda)
+# KLAWIATURA
 # =======================
 def main_keyboard():
     markup = telebot.types.ReplyKeyboardMarkup(resize_keyboard=True)
@@ -74,9 +64,11 @@ def website_handler(message):
 @bot.message_handler(func=lambda message: message.text == "🎮 Tomama O‘yini")
 def game_handler(message):
     inline = telebot.types.InlineKeyboardMarkup()
+    # URL oxiriga / belgisini qo'shish tavsiya etiladi
+    game_url = "https://bot-telegram-production-d731.up.railway.app/game"
     inline.add(telebot.types.InlineKeyboardButton(
         text="▶️ O‘yinni boshlash",
-        web_app=telebot.types.WebAppInfo(url="https://bot-telegram-production-d731.up.railway.app/game")
+        web_app=telebot.types.WebAppInfo(url=game_url)
     ))
     bot.send_message(message.chat.id, "🍅 Tomama o‘yiniga xush kelibsiz!\nBoshlash uchun tugmani bosing 👇", reply_markup=inline)
 
@@ -85,26 +77,33 @@ def game_handler(message):
 # =======================
 
 @app.route("/game")
-def game():
-    return send_from_directory('webapp', 'index.html')
+def game_page():
+    # Index.html faylini webapp papkasidan yuborish
+    return send_from_directory(app.static_folder, 'index.html')
 
 @app.route("/<path:path>")
 def static_files(path):
-    return send_from_directory('webapp', path)
+    # assets, game.js va boshqa fayllarni yuborish
+    return send_from_directory(app.static_folder, path)
 
 @app.route("/")
 def health_check():
     return "Bot is running!", 200
 
+# =======================
+# ISHGA TUSHIRISH
+# =======================
+
 def run_bot():
     print("Bot polling boshlandi...")
-    bot.infinity_polling()
+    bot.infinity_polling(none_stop=True)
 
 if __name__ == "__main__":
-    # Botni orqa fonda ishga tushirish
-    t = threading.Thread(target=run_bot)
-    t.daemon = True
-    t.start()
+    # Botni alohida oqimda (thread) ishga tushiramiz
+    bot_thread = threading.Thread(target=run_bot)
+    bot_thread.daemon = True
+    bot_thread.start()
     
-    # Flaskni asosiy portda ishga tushirish
+    # Flask serverni ishga tushiramiz
+    print(f"Server {PORT}-portda ishlamoqda...")
     app.run(host="0.0.0.0", port=PORT)
