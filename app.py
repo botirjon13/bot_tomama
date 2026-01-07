@@ -3,6 +3,16 @@ import os
 import threading
 from flask import Flask, send_from_directory
 
+# Importlardan keyin, TOKEN qatoridan oldin qo'shing
+def start_bot_in_background():
+    print("Bot orqa fonda ishga tushirilmoqda...")
+    t = threading.Thread(target=lambda: bot.infinity_polling(none_stop=True))
+    t.daemon = True
+    t.start()
+
+# Botni darhol ishga tushiramiz
+start_bot_in_background()
+
 # 1. SOZLAMALAR
 TOKEN = '8449204541:AAG8--gTH_dncxMQ5cW1eKh03ht9Y_J7seI'
 bot = telebot.TeleBot(TOKEN)
