@@ -5,22 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Tomama O‘yini</title>
   
-  <!-- 1-XATO TO'G'RILANDI: Telegram WebApp uchun to'liq va to'g'ri havola -->
+  <!-- Telegram SDK - TO'G'RI MANZIL -->
   <script src="telegram.org"></script>
   
   <link rel="stylesheet" href="style.css">
-  
   <style>
-    /* Canvas ekranni to'liq egallashi uchun */
-    body, html {
-      margin: 0;
-      padding: 0;
-      overflow: hidden;
-      background-color: #000;
-    }
-    #gameCanvas {
-      display: block;
-    }
+    body, html { margin: 0; padding: 0; overflow: hidden; background: #000; }
+    canvas { display: block; }
   </style>
 </head>
 <body>
@@ -28,19 +19,15 @@
   <canvas id="gameCanvas"></canvas>
 
   <script>
-    // Telegram WebApp ni ishga tushirish
-    // Avval Telegram scripti yuklanganini tekshiramiz
-    const tg = window.Telegram.WebApp;
-    
+    // Telegram WebApp ni xavfsiz ishga tushirish
+    const tg = window.Telegram ? window.Telegram.WebApp : null;
     if (tg) {
-      tg.ready();
-      tg.expand(); // O'yin oynasini to'liq ekranga yoyish
-    } else {
-      console.error("Telegram SDK yuklanmadi!");
+        tg.ready();
+        tg.expand();
     }
   </script>
 
-  <!-- O'yin mantiqi -->
+  <!-- O'yin kodi faqat canvas yuklangach ishlaydi -->
   <script src="game.js"></script>
 
 </body>
