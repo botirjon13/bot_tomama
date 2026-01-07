@@ -3,6 +3,12 @@ import os
 import threading
 from flask import Flask, send_from_directory
 
+# 1. SOZLAMALAR
+TOKEN = '8449204541:AAG8--gTH_dncxMQ5cW1eKh03ht9Y_J7seI'
+bot = telebot.TeleBot(TOKEN)
+app = Flask(__name__, static_folder='webapp')
+PORT = int(os.environ.get("PORT", 8080))
+
 # Importlardan keyin, TOKEN qatoridan oldin qo'shing
 def start_bot_in_background():
     print("Bot orqa fonda ishga tushirilmoqda...")
@@ -12,12 +18,6 @@ def start_bot_in_background():
 
 # Botni darhol ishga tushiramiz
 start_bot_in_background()
-
-# 1. SOZLAMALAR
-TOKEN = '8449204541:AAG8--gTH_dncxMQ5cW1eKh03ht9Y_J7seI'
-bot = telebot.TeleBot(TOKEN)
-app = Flask(__name__, static_folder='webapp')
-PORT = int(os.environ.get("PORT", 8080))
 
 # =======================
 # KLAWIATURA (Tugmalar matni bu yerda)
