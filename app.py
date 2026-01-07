@@ -1,14 +1,17 @@
-from flask import Flask, send_from_directory
+import telebot
 import os
 import threading
-import asyncio
-from aiogram import Bot, Dispatcher, types
+from flask import Flask, send_from_directory
 
+# 1. SOZLAMALAR
+TOKEN = '8449204541:AAG8--gTH_dncxMQ5cW1eKh03ht9Y_J7seI'
+bot = telebot.TeleBot(TOKEN)
 app = Flask(__name__, static_folder='webapp')
 PORT = int(os.environ.get("PORT", 8080))
-TOKEN = os.getenv("BOT_TOKEN") # .env faylda bo'lishi kerak
 
-# 1. Flask yo'nalishlari
+# =======================
+# FLASK QISMI (Veb-sayt va O'yin uchun)
+# =======================
 @app.route("/game")
 def game():
     return send_from_directory('webapp', 'index.html')
@@ -17,24 +20,47 @@ def game():
 def static_files(path):
     return send_from_directory('webapp', path)
 
-# 2. Bot qismi (aiogram 3.x misolida)
-bot = Bot(token=TOKEN)
-dp = Dispatcher()
+@app.route("/")
+def index():
+    return "Bot va O'yin ishlamoqda!"
 
-@dp.message()
-async def start_command(message: types.Message):
-    await message.answer("Salom! O'yinni boshlash uchun tugmani bosing.")
+# =======================
+# BOT QISMI (Siz yuborgan kod)
+# =======================
+def main_keyboard():
+    markup = telebot.types.ReplyKeyboardMarkup(resize_keyboard=True)
+    markup.add("🔹 Korxona Haqida", "📞 Aloqa")
+    markup.add("🌐 Saytga O'tish", "🎮 Tomama O‘yini")
+    return markup
 
-async def main_bot():
-    await dp.start_polling(bot)
+@bot.message_handler(commands=['start'])
+def send_welcome(message):
+    bot.send_message(message.chat.id, "✨ Salom! Botga xush kelibsiz!", reply_markup=main_keyboard())
 
-# 3. Ikkalasini birga ishga tushirish
+@bot.message_handler(func=lambda message: message.text == "🎮 Tomama O‘yini")
+def open_game(message):
+    inline = telebot.types.InlineKeyboardMarkup()
+    inline.add(telebot.types.InlineKeyboardButton(
+        text="▶️ O‘yinni boshlash",
+        web_app=telebot.types.WebAppInfo(url="https://uztomama-production.up.railway.app/game")
+    ))
+    bot.send_message(message.chat.id, "🍅 O'yinni boshlang:", reply_markup=inline)
+
+# Korxona va Aloqa funksiyalarini ham shu yerga qo'shib qo'ying (Siz yozgan kod)
+
+# =======================
+# IKKALASINI BIRGA ISHLATISH
+# =======================
+def run_bot():
+    print("Bot polling boshlandi...")
+    bot.infinity_polling()
+
 if __name__ == "__main__":
-    # Botni alohida oqimda (thread) ishga tushiramiz
-    def run_bot():
-        asyncio.run(main_bot())
-
-    threading.Thread(target=run_bot, daemon=True).start()
+    # Botni alohida oqimda (Thread) ishga tushiramiz
+    bot_thread = threading.Thread(target=run_bot)
+    bot_thread.daemon = True
+    bot_thread.start()
 
     # Flaskni asosiy oqimda ishga tushiramiz
+    print(f"Server {PORT}-portda ishga tushdi...")
     app.run(host="0.0.0.0", port=PORT)
