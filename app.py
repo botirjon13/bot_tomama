@@ -64,7 +64,7 @@ def game_handler(message):
     inline = telebot.types.InlineKeyboardMarkup()
     inline.add(telebot.types.InlineKeyboardButton(
         text="▶️ O‘yinni boshlash",
-        web_app=telebot.types.WebAppInfo(url="uztomama-production.up.railway.app")
+        web_app=telebot.types.WebAppInfo(url="https://bot-telegram-production-d731.up.railway.app/")
     ))
     bot.send_message(message.chat.id, "🍅 Tomama o‘yiniga xush kelibsiz!\nBoshlash uchun tugmani bosing 👇", reply_markup=inline)
 
