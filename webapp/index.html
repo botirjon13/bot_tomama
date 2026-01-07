@@ -5,29 +5,94 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Tomama O‘yini</title>
   
-  <!-- Telegram SDK - TO'G'RI MANZIL -->
+  <!-- Telegram SDK (manzilini to'g'irladim) -->
   <script src="telegram.org"></script>
   
   <link rel="stylesheet" href="style.css">
-  <style>
-    body, html { margin: 0; padding: 0; overflow: hidden; background: #000; }
-    canvas { display: block; }
-  </style>
 </head>
 <body>
 
-  <canvas id="gameCanvas"></canvas>
+  <!-- ASOSIY MENYU OYNASI -->
+  <div id="mainMenu" class="menu-container">
+    <div class="menu-box">
+        <h1>Tomama Game</h1>
+        <button onclick="startGame()">▶️ O'yinni boshlash</button>
+        <button onclick="showRanking()">🏆 Reyting (Top-10)</button>
+        <button onclick="showCoupons()">🎫 Kuponlarim</button>
+    </div>
+  </div>
+
+  <!-- REYTING OYNASI -->
+  <div id="rankingMenu" class="menu-container hidden">
+    <div class="menu-box">
+        <h2>🏆 Reyting (Top-10)</h2>
+        <ul id="rankingList">
+            <!-- Reyting elementlari JS orqali qo'shiladi -->
+            <li>1. Sardorbek - 1500 ochko</li>
+            <li>2. Ali - 1200 ochko</li>
+            <li>3. User3 - 800 ochko</li>
+        </ul>
+        <button onclick="hideRanking()">⬅️ Ortga</button>
+    </div>
+  </div>
+
+  <!-- KUPONLAR OYNASI -->
+  <div id="couponsMenu" class="menu-container hidden">
+    <div class="menu-box">
+        <h2>🎫 Kuponlarim</h2>
+        <ul id="couponList">
+            <!-- Kuponlar JS orqali qo'shiladi -->
+            <li class="active">Kupon-12345 (Aktiv)</li>
+            <li class="used">Kupon-67890 (Ishlatilgan)</li>
+        </ul>
+        <button onclick="hideCoupons()">⬅️ Ortga</button>
+    </div>
+  </div>
+
+
+  <!-- O'YIN MAYDONI (CANVAS) -->
+  <canvas id="gameCanvas" class="hidden"></canvas>
 
   <script>
     // Telegram WebApp ni xavfsiz ishga tushirish
-    const tg = window.Telegram ? window.Telegram.WebApp : null;
+    const tg = window.Telegram.WebApp;
     if (tg) {
         tg.ready();
         tg.expand();
     }
+
+    // --- MENYU FUNKSIYALARI (global scope ga qo'shildi) ---
+    function startGame() {
+        document.getElementById('mainMenu').classList.add('hidden');
+        document.getElementById('gameCanvas').classList.remove('hidden');
+        // game.js dagi update() funksiyasini qo'lda chaqiramiz endi
+        if (window.startGameLoop) window.startGameLoop(); 
+    }
+
+    function showRanking() {
+        document.getElementById('mainMenu').classList.add('hidden');
+        document.getElementById('rankingMenu').classList.remove('hidden');
+        // Haqiqiy reytingni API dan olish funksiyasi bu yerda bo'ladi
+    }
+
+    function hideRanking() {
+        document.getElementById('mainMenu').classList.remove('hidden');
+        document.getElementById('rankingMenu').classList.add('hidden');
+    }
+    
+    function showCoupons() {
+        document.getElementById('mainMenu').classList.add('hidden');
+        document.getElementById('couponsMenu').classList.remove('hidden');
+        // Haqiqiy kuponlarni API dan olish funksiyasi bu yerda bo'ladi
+    }
+
+    function hideCoupons() {
+        document.getElementById('mainMenu').classList.remove('hidden');
+        document.getElementById('couponsMenu').classList.add('hidden');
+    }
   </script>
 
-  <!-- O'yin kodi faqat canvas yuklangach ishlaydi -->
+  <!-- O'yin kodi -->
   <script src="game.js"></script>
 
 </body>
