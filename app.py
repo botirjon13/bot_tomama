@@ -12,7 +12,7 @@ app = Flask(__name__, static_folder='webapp')
 # Railway portini o'qib olish
 PORT = int(os.environ.get("PORT", 8080))
 # Webhook URL manzili (sizning Railway domeningiz - HTTPS majburiy!)
-WEBHOOK_URL = f"bot-telegram-production-d731.up.railway.app{TOKEN}"
+WEBHOOK_URL = f"https://bot-telegram-production-d731.up.railway.app{TOKEN}"
 
 # =======================
 # KLAWIATURA
