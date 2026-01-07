@@ -15,19 +15,24 @@ body, html {
     user-select: none;
 }
 
+/* YASHIRISH KLASSI - eng muhimi! */
+.hidden {
+    display: none !important;
+}
+
 /* MENYU KONTEYNERI */
 .menu-container {
-    position: absolute;
+    position: fixed; /* absolute o'rniga fixed yaxshiroq */
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    display: flex;
+    display: flex; /* Bu faqat .hidden bo'lmasa ishlaydi */
     justify-content: center;
     align-items: center;
-    background: rgba(0, 0, 0, 0.2); /* Orqa fonni biroz xiralashtirish */
-    backdrop-filter: blur(5px); /* Shishasimon effekt */
-    z-index: 10;
+    background: rgba(0, 0, 0, 0.6); 
+    backdrop-filter: blur(8px);
+    z-index: 100;
 }
 
 /* MENYU BOX - GLASSMORPHISM */
