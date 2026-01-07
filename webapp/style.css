@@ -1,39 +1,21 @@
-/* ASOSIY SOZLAMALAR */
-* {
-    box-sizing: border-box;
-    -webkit-tap-highlight-color: transparent;
-}
-
+/* ASOSIY FON - ZAMONAVIY GRADIENT */
 body, html {
     margin: 0;
     padding: 0;
     width: 100%;
     height: 100%;
-    overflow: hidden; 
-    background-color: #FFF5F5;
+    overflow: hidden;
+    /* Tomama brendiga mos qizil-to'q sariq premium gradient */
+    background: radial-gradient(circle, #ff4d4d 0%, #b30000 100%);
     display: flex;
     justify-content: center;
     align-items: center;
-    font-family: 'Arial', sans-serif;
-    touch-action: none; 
+    font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    touch-action: none;
     user-select: none;
-    -webkit-user-select: none;
 }
 
-/* YASHIRISH KLASSI */
-.hidden {
-    display: none !important;
-}
-
-/* O'YIN MAYDONI (CANVAS) */
-#gameCanvas {
-    display: block;
-    background-color: #FFF5F5;
-    width: 100vw;
-    height: 100vh;
-}
-
-/* MENYU STILLARI */
+/* MENYU KONTEYNERI */
 .menu-container {
     position: absolute;
     top: 0;
@@ -43,55 +25,87 @@ body, html {
     display: flex;
     justify-content: center;
     align-items: center;
-    background-color: rgba(255, 245, 245, 0.95);
+    background: rgba(0, 0, 0, 0.2); /* Orqa fonni biroz xiralashtirish */
+    backdrop-filter: blur(5px); /* Shishasimon effekt */
     z-index: 10;
 }
 
+/* MENYU BOX - GLASSMORPHISM */
 .menu-box {
     text-align: center;
-    padding: 20px;
-    background: white;
-    border-radius: 15px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-    max-width: 80%;
+    padding: 40px 30px;
+    background: rgba(255, 255, 255, 0.15); /* Shaffof oq */
+    backdrop-filter: blur(15px);
+    border-radius: 30px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+    width: 85%;
+    max-width: 400px;
 }
 
-.menu-box h1, .menu-box h2 {
-    color: #D62828;
-    margin-bottom: 20px;
+.menu-box h1 {
+    color: #fff;
+    font-size: 36px;
+    margin-bottom: 30px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    text-shadow: 2px 4px 10px rgba(0,0,0,0.3);
 }
 
+/* TUGMALAR - PREMIUM STYLE */
 .menu-box button {
     display: block;
     width: 100%;
-    padding: 15px;
-    margin-bottom: 10px;
+    padding: 18px;
+    margin-bottom: 15px;
     font-size: 18px;
-    color: white;
-    background-color: #00BFFF; /* Chiroyli ko'k rang */
+    font-weight: bold;
+    color: #b30000;
+    background: white;
     border: none;
-    border-radius: 10px;
+    border-radius: 50px; /* Yumaloq tugmalar */
     cursor: pointer;
-    transition: background-color 0.3s;
+    box-shadow: 0 8px 15px rgba(0,0,0,0.2);
+    transition: all 0.3s ease;
+    text-transform: uppercase;
 }
 
-.menu-box button:hover {
-    background-color: #0099cc;
+.menu-box button:active {
+    transform: scale(0.95); /* Bosilganda kichrayish effekti */
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
 }
 
-/* RO'YXAT STILLARI (Reyting va Kuponlar) */
+/* O'yinni boshlash tugmasi alohida ajralib tursin */
+.menu-box button:first-of-type {
+    background: #ffd700; /* Oltin rang */
+    color: #333;
+    font-size: 20px;
+}
+
+/* RO'YXATLAR - REYTING VA KUPONLAR */
 #rankingList, #couponList {
-    list-style: none;
-    padding: 0;
-    margin-bottom: 20px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    padding: 10px;
+    max-height: 300px;
+    overflow-y: auto;
 }
 
 #rankingList li, #couponList li {
-    padding: 10px;
-    border-bottom: 1px solid #eee;
-    text-align: left;
-    color: #333;
+    padding: 12px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    color: #fff;
+    font-size: 16px;
+    display: flex;
+    justify-content: space-between;
 }
 
-.active { color: green !important; font-weight: bold; }
-.used { color: gray !important; text-decoration: line-through; }
+.active { color: #4ade80 !important; font-weight: bold; } /* Yorqin yashil */
+.used { color: #ffa3a3 !important; text-decoration: line-through; opacity: 0.7; }
+
+/* ORTGA TUGMASI */
+.back-btn {
+    background: rgba(255, 255, 255, 0.2) !important;
+    color: #fff !important;
+    margin-top: 10px;
+}
