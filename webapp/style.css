@@ -1,25 +1,167 @@
+/* ASOSIY FON - ZAMONAVIY GRADIENT */
+body, html {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    /* Tomama brendiga mos qizil-to'q sariq premium gradient */
+    background: radial-gradient(circle, #ffffff 0%, #f0f0f0 100%);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    touch-action: none;
+    user-select: none;
+}
+
+/* YASHIRISH KLASSI - eng muhimi! */
+.hidden {
+    display: none !important;
+}
+
+/* MENYU KONTEYNERI */
+.menu-container {
+    position: fixed; /* absolute o'rniga fixed yaxshiroq */
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex; /* Bu faqat .hidden bo'lmasa ishlaydi */
+    justify-content: center;
+    align-items: center;
+    background: rgba(0, 0, 0, 0.6); 
+    backdrop-filter: blur(8px);
+    z-index: 100;
+}
+
+/* MENYU BOX - GLASSMORPHISM */
+.menu-box {
+    text-align: center;
+    padding: 40px 30px;
+    background: rgba(255, 255, 255, 0.15); /* Shaffof oq */
+    backdrop-filter: blur(15px);
+    border-radius: 30px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+    width: 85%;
+    max-width: 400px;
+}
+
+.menu-box h1 {
+    color: #fff;
+    font-size: 36px;
+    margin-bottom: 30px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    text-shadow: 2px 4px 10px rgba(0,0,0,0.3);
+}
+
+/* TUGMALAR - PREMIUM STYLE */
+.menu-box button {
+    display: block;
+    width: 100%;
+    padding: 18px;
+    margin-bottom: 15px;
+    font-size: 18px;
+    font-weight: bold;
+    color: #b30000;
+    background: white;
+    border: none;
+    border-radius: 50px; /* Yumaloq tugmalar */
+    cursor: pointer;
+    box-shadow: 0 8px 15px rgba(0,0,0,0.2);
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+}
+
+.menu-box button:active {
+    transform: scale(0.95); /* Bosilganda kichrayish effekti */
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+/* O'yinni boshlash tugmasi alohida ajralib tursin */
+.menu-box button:first-of-type {
+    background: #ffd700; /* Oltin rang */
+    color: #333;
+    font-size: 20px;
+}
+
+/* RO'YXATLAR - REYTING VA KUPONLAR */
+#rankingList, #couponList {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    padding: 10px;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+#rankingList li, #couponList li {
+    padding: 12px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    color: #fff;
+    font-size: 16px;
+    display: flex;
+    justify-content: space-between;
+}
+
+.active { color: #4ade80 !important; font-weight: bold; } /* Yorqin yashil */
+.used { color: #ffa3a3 !important; text-decoration: line-through; opacity: 0.7; }
+
+/* ORTGA TUGMASI */
+.back-btn {
+    background: rgba(255, 255, 255, 0.2) !important;
+    color: #fff !important;
+    margin-top: 10px;
+}
+.game-logo {
+    width: 200px;         /* Rasmni o'zingizga yoqqan kenglikda belgilang */
+    height: auto;         /* Proporsiyani saqlaydi */
+    margin-bottom: 25px;  /* Tugmalardan masofa qoldiradi */
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+    /* 2026-yil dizayn trendi: logotipga yengil soya berish */
+    filter: drop-shadow(0 5px 15px rgba(0,0,0,0.1));
+}
+
+/* FON ELEMENTLARI KONTEYNERI */
 .bg-elements {
     position: fixed;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    z-index: 1;
-    pointer-events: none; /* BU JUDA MUHIM! Tugmalar ishlashi uchun */
+    z-index: 1; /* Menyu tagida turishi uchun */
+    overflow: hidden;
+    pointer-events: none; /* Tugmalarni bosishga xalaqit bermaydi */
 }
 
-.menu-container {
-    z-index: 100;
+/* UMUMIY STIL */
+.floating-item {
+    position: absolute;
+    width: 80px; /* Kattaligi */
+    opacity: 0.3; /* Juda yorqin bo'lmasligi uchun xiralashtiramiz */
+    animation: rotateAndMove 15s linear infinite;
 }
 
-#gameCanvas {
-    position: fixed;
-    top: 0;
-    left: 0;
-    z-index: 50;
-    background: #87CEEB;
-}
+/* ALOHIDA POZITSIYALAR */
+.item-1 { top: 10%; left: 10%; animation-duration: 20s; }
+.item-2 { top: 60%; left: 80%; animation-duration: 25s; animation-direction: reverse; }
+.item-3 { top: 80%; left: 20%; animation-duration: 18s; }
 
-.hidden {
-    display: none !important;
+/* AYLANISH VA HARAKAT ANIMATSIYASI */
+@keyframes rotateAndMove {
+    0% {
+        transform: rotate(0deg) translateY(0px) translateX(0px);
+    }
+    33% {
+        transform: rotate(120deg) translateY(50px) translateX(20px);
+    }
+    66% {
+        transform: rotate(240deg) translateY(-30px) translateX(40px);
+    }
+    100% {
+        transform: rotate(360deg) translateY(0px) translateX(0px);
+    }
 }
