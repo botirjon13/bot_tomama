@@ -5,7 +5,6 @@ const ctx = canvas.getContext('2d');
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 
-//const tg = window.Telegram?.WebApp;
 const tgUser = tg?.initDataUnsafe?.user || null;
 
 /* ================= SCORE ================= */
@@ -180,7 +179,8 @@ canvas.addEventListener('touchmove', moveBasket,{passive:false});
 canvas.addEventListener('mousemove', moveBasket);
 
 /* ================= API URL ================= */
-const API_URL = 'https://postgresql://postgres:lfNwjvskjuRFJKMbmhHiTCFTBPslvRYC@postgres.railway.internal:5432/railway'; // <--- o'zingiz URL qo'yasiz
+// BACKEND URL - server.js deploy qilingan HTTP endpoint
+const API_URL = 'https://your-railway-app.up.railway.app'; // <--- bu sizning server URL
 
 /* ================= LEADERBOARD ================= */
 window.loadLeaderboard = async function() {
