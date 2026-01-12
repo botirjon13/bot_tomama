@@ -4,48 +4,19 @@ const ctx = canvas.getContext('2d');
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 
+// Telegram WebApp va Lokal Ma'lumotlar
+const tg = window.Telegram?.WebApp;
+let highScore = localStorage.getItem('highScore') || 0;
+
 let assets = {};
-// Boshlang'ich yuklash sanog'ini 3 ga o'zgartirdim (3 ta rasm bor)
 let imagesToLoad = 3; 
 let loadedCount = 0;
 let assetsLoaded = false;
 
-function imageLoaded() {
-    loadedCount++;
-    if (loadedCount === imagesToLoad) {
-        assetsLoaded = true;
-        // Rasmlar yuklangach, menyu ko'rinadi (chunki update() chaqirilmayapti endi)
-        console.log("Barcha rasmlar muvaffaqiyatli yuklandi!");
-    }
-}
-
-function imageError(e) {
-    console.error("Fayl topilmadi: " + e.target.src);
-    // Xatolik bo'lsa ham yuklangan deb hisoblab davom etamiz
-    imageLoaded(); 
-}
-
-// RASMLAR YO'LI (Diqqat: 'assets' papkasi to'g'ri yozilganiga ishonch hosil qiling)
-assets.basket = new Image();
-assets.basket.src = 'assaets/basket.png'; // assaets -> assets
-assets.basket.onload = imageLoaded;
-assets.basket.onerror = imageError;
-
-assets.myBrand = new Image();
-assets.myBrand.src = 'assaets/products/tomato.png'; // assaets -> assets
-assets.myBrand.onload = imageLoaded;
-assets.myBrand.onerror = imageError;
-
-assets.otherBrand = new Image();
-assets.otherBrand.src = 'assaets/products/other_tomato.png'; // assaets -> assets
-assets.otherBrand.onload = imageLoaded;
-assets.otherBrand.onerror = imageError;
-
-// Oldingi holat: canvas.height - 100
-// Yangi holat: canvas.height - 160 (yoki o'zingizga qulayroq masofa)
+// O'yin o'zgaruvchilari
 let basket = { 
     x: canvas.width / 2 - 60, 
-    y: canvas.height - 160, // 100 dan 160 ga o'zgartirdik, savat yuqoriga ko'tarildi
+    y: canvas.height - 160, 
     width: 120, 
     height: 85 
 };
@@ -54,27 +25,73 @@ let items = [];
 let score = 0;
 let lives = 3;
 let speed = 3;
+let combo = 0;
 let isGameOver = false;
-let spawnInterval = null; // Intervalni boshida null qildik
+let isSlowMotion = false;
+let slowMoTimer = null;
+let spawnInterval = null;
+
+// Aktivlarni yuklash
+function imageLoaded() {
+    loadedCount++;
+    if (loadedCount === imagesToLoad) {
+        assetsLoaded = true;
+        console.log("Barcha grafikalar yuklandi!");
+    }
+}
+
+assets.basket = new Image();
+assets.basket.src = 'assets/basket.png'; 
+assets.basket.onload = imageLoaded;
+
+assets.myBrand = new Image();
+assets.myBrand.src = 'assets/products/tomato.png'; 
+assets.myBrand.onload = imageLoaded;
+
+assets.otherBrand = new Image();
+assets.otherBrand.src = 'assets/products/other_tomato.png'; 
+assets.otherBrand.onload = imageLoaded;
+
+// Effektlar funksiyalari
+function triggerHaptic(type) {
+    if (tg && tg.HapticFeedback) {
+        if (type === 'success') tg.HapticFeedback.notificationOccurred('success');
+        if (type === 'error') tg.HapticFeedback.notificationOccurred('error');
+        if (type === 'impact') tg.HapticFeedback.impactOccurred('medium');
+    }
+}
+
+function activateSlowMo() {
+    isSlowMotion = true;
+    clearTimeout(slowMoTimer);
+    slowMoTimer = setTimeout(() => { isSlowMotion = false; }, 5000);
+}
 
 function spawnItem() {
     if (isGameOver) return;
     
-    speed = 3 + Math.floor(score / 50); 
+    speed = 3 + Math.floor(score / 100); 
+    const rand = Math.random();
+    let type, image;
 
-    const isMyBrand = Math.random() > 0.2;
-    
-    // O'lchamlarni bu yerda belgilaymiz (masalan 65px)
-    const itemWidth = 65; 
-    const itemHeight = 65;
+    if (rand > 0.96) { // 4% imkoniyat bilan Bonus (Oltin pomidor)
+        type = 'bonus';
+        image = assets.myBrand; 
+    } else if (rand > 0.25) {
+        type = 'myBrand';
+        image = assets.myBrand;
+    } else {
+        type = 'otherBrand';
+        image = assets.otherBrand;
+    }
 
     items.push({
-        x: Math.random() * (canvas.width - itemWidth), // Ekrandan chiqib ketmasligi uchun
-        y: -itemHeight,
-        width: itemWidth,
-        height: itemHeight,
-        type: isMyBrand ? 'myBrand' : 'otherBrand',
-        image: isMyBrand ? assets.myBrand : assets.otherBrand
+        x: Math.random() * (canvas.width - 65),
+        y: -70,
+        width: 65,
+        height: 65,
+        type: type,
+        image: image
     });
 }
 
@@ -82,50 +99,101 @@ function update() {
     if (isGameOver || !assetsLoaded) return;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+    if (isSlowMotion) {
+        ctx.fillStyle = "rgba(0, 191, 255, 0.05)";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
+
     ctx.drawImage(assets.basket, basket.x, basket.y, basket.width, basket.height);
+
+    let currentSpeed = isSlowMotion ? 2.5 : speed;
 
     for (let i = 0; i < items.length; i++) {
         let p = items[i];
-        p.y += speed;
-        ctx.drawImage(p.image, p.x, p.y, p.width, p.height);
+        p.y += currentSpeed;
 
-        // Mahsulot savatchaga tegishi
-        if (p.y + p.height >= basket.y && p.x + p.width >= basket.x && p.x <= basket.x + basket.width) {
-            if (p.type === 'myBrand') score += 1;
-            else lives -= 1; // noto'g'ri mahsulot ushlansa jon kamayadi
+        if (p.type === 'bonus') {
+            ctx.shadowBlur = 15;
+            ctx.shadowColor = "gold";
+        }
+        ctx.drawImage(p.image, p.x, p.y, p.width, p.height);
+        ctx.shadowBlur = 0;
+
+        // To'qnashuv logikasi (Optimallashtirilgan hitbox)
+        if (p.y + p.height >= basket.y + 10 && p.y <= basket.y + 30 &&
+            p.x + p.width >= basket.x + 10 && p.x <= basket.x + basket.width - 10) {
+            
+            if (p.type === 'bonus') {
+                activateSlowMo();
+                triggerHaptic('success');
+            } else if (p.type === 'myBrand') {
+                combo++;
+                let multiplier = Math.floor(combo / 5) + 1;
+                score += 10 * multiplier;
+                if (score > highScore) highScore = score;
+                triggerHaptic('impact');
+            } else {
+                lives -= 1;
+                combo = 0;
+                triggerHaptic('error');
+            }
             items.splice(i, 1); i--;
             if (lives <= 0) { gameOver(); return; }
             continue;
         }
 
-        // Mahsulot pastga tushib ketishi
         if (p.y > canvas.height) {
-            if (p.type === 'myBrand') lives -= 1; // o'z mahsuloti o'tib ketsa jon kamayadi
-            if (lives <= 0) { gameOver(); return; }
+            if (p.type === 'myBrand') {
+                lives -= 1;
+                combo = 0;
+                triggerHaptic('error');
+            }
             items.splice(i, 1); i--;
+            if (lives <= 0) { gameOver(); return; }
         }
     }
 
-    ctx.fillStyle = '#D62828'; // Qizil rang
-    ctx.font = '24px Arial';
-    ctx.fillText('Ochko: ' + score, 20, 40);
-    ctx.fillText('Jonlar: ' + '❤️'.repeat(lives), 20, 70);
-
+    drawUI();
     requestAnimationFrame(update);
+}
+
+function drawUI() {
+    // Info Panel
+    ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
+    ctx.beginPath();
+    ctx.roundRect(15, 15, 210, 135, 15);
+    ctx.fill();
+
+    ctx.fillStyle = 'white';
+    ctx.font = 'bold 20px sans-serif';
+    ctx.fillText('🏆 Ball: ' + score, 30, 45);
+    
+    ctx.fillStyle = '#FFD700';
+    ctx.fillText('⭐ Rekord: ' + highScore, 30, 75);
+
+    ctx.fillStyle = 'white';
+    ctx.fillText('❤️ Jon: ' + '❤️'.repeat(lives), 30, 105);
+    
+    if (combo >= 2) {
+        ctx.fillStyle = '#ADFF2F';
+        ctx.font = 'italic bold 22px sans-serif';
+        ctx.fillText('Combo x' + combo, 30, 135);
+    }
+
+    if (isSlowMotion) {
+        ctx.fillStyle = '#00BFFF';
+        ctx.font = 'bold 16px sans-serif';
+        ctx.fillText('❄️ SEKINLASHUV FAOL', canvas.width/2 - 70, 35);
+    }
 }
 
 function moveBasket(e) {
     e.preventDefault();
     let clientX = e.touches ? e.touches[0].clientX : e.clientX;
-    
-    // Savat barmog'ingizdan 40-50 piksel yuqorida yursin
     basket.x = clientX - basket.width / 2;
-
-    // Chegaradan chiqib ketmasligi uchun
     if (basket.x < 0) basket.x = 0;
     if (basket.x + basket.width > canvas.width) basket.x = canvas.width - basket.width;
 }
-
 
 canvas.addEventListener('touchmove', moveBasket, { passive: false });
 canvas.addEventListener('mousemove', moveBasket);
@@ -133,41 +201,30 @@ canvas.addEventListener('mousemove', moveBasket);
 function gameOver() {
     isGameOver = true;
     clearInterval(spawnInterval);
-    // alert("O'yin tugadi! Natijangiz: " + score); // Telegram Mini App da alert ishlatmagan ma'qul
     
-    // Telegram MainButton orqali natijani ko'rsatish
-    if(window.Telegram && window.Telegram.WebApp) {
-        window.Telegram.WebApp.MainButton.setText(`Natija: ${score}. Bosh menyu`);
-        window.Telegram.WebApp.MainButton.show();
-        window.Telegram.WebApp.MainButton.onClick(goHome);
+    if (score >= highScore) {
+        localStorage.setItem('highScore', score);
+    }
+
+    if(tg) {
+        tg.MainButton.setText(`TUGADI! BALL: ${score} | REKORD: ${highScore}`);
+        tg.MainButton.show();
+        tg.MainButton.onClick(() => location.reload());
     } else {
-        alert("O'yin tugadi! Natijangiz: " + score);
-        goHome();
+        alert(`O'yin tugadi!\nBall: ${score}\nRekord: ${highScore}`);
+        location.reload();
     }
 }
 
-function goHome() {
-    location.reload(); // Sahifani qayta yuklash orqali bosh menyuga qaytishning eng oson yo'li
-}
-
-
-// Index.html dan chaqiriladigan funksiya
-// window.startGameLoop global o'zgaruvchiga update funksiyasini yuklaymiz
 window.startGameLoop = function() {
-    if (!assetsLoaded) {
-        console.error("Rasmlar hali yuklanmagan!");
-        return;
-    }
+    if (!assetsLoaded) return;
     score = 0;
     lives = 3;
+    combo = 0;
     isGameOver = false;
     items = [];
-    speed = 3;
+    if(spawnInterval) clearInterval(spawnInterval);
     spawnInterval = setInterval(spawnItem, 1000);
-    requestAnimationFrame(update); // O'yin siklini boshlash
-    
-    // Telegram MainButton ni o'yin vaqtida yashirish
-    if(window.Telegram && window.Telegram.WebApp) {
-        window.Telegram.WebApp.MainButton.hide();
-    }
+    requestAnimationFrame(update);
+    if(tg) tg.MainButton.hide();
 };
