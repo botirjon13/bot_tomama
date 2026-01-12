@@ -1,6 +1,11 @@
 import express from "express";
 import pkg from "pg";
 import cors from "cors";
+import path from "path";
+import { fileURLToPath } from "url";
+import dotenv from "dotenv";
+
+dotenv.config();
 
 const { Pool } = pkg;
 
@@ -13,9 +18,6 @@ const pool = new Pool({
   ssl: { rejectUnauthorized: false }
 });
 
-/* ===============================
-   DB INIT (1 marta ishlaydi)
-================================ */
 async function initDB() {
   await pool.query(`
     CREATE TABLE IF NOT EXISTS leaderboard (
@@ -29,18 +31,19 @@ async function initDB() {
   `);
   console.log("✅ DB ready");
 }
-
 initDB();
 
-/* ===============================
-   SCORE SAQLASH
-================================ */
+// Statik fayllarni berish
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+app.use(express.static(__dirname));
+app.use('/assaets', express.static(path.join(__dirname, 'assaets')));
+
 app.post("/score", async (req, res) => {
   const { telegram_id, username, photo_url, score } = req.body;
 
-  if (!telegram_id || !score) {
-    return res.status(400).json({ error: "Invalid data" });
-  }
+  if (!telegram_id || !score) return res.status(400).json({ error: "Invalid data" });
 
   try {
     await pool.query(`
@@ -61,9 +64,6 @@ app.post("/score", async (req, res) => {
   }
 });
 
-/* ===============================
-   TOP-10 OLISH
-================================ */
 app.get("/top10", async (req, res) => {
   try {
     const { rows } = await pool.query(`
@@ -72,7 +72,6 @@ app.get("/top10", async (req, res) => {
       ORDER BY score DESC
       LIMIT 10
     `);
-
     res.json(rows);
   } catch (err) {
     console.error(err);
@@ -80,10 +79,5 @@ app.get("/top10", async (req, res) => {
   }
 });
 
-/* ===============================
-   SERVER START
-================================ */
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log("🚀 Server running on port", PORT);
-});
+app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
