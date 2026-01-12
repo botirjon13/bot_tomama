@@ -180,7 +180,7 @@ canvas.addEventListener('mousemove', moveBasket);
 
 /* ================= API URL ================= */
 // BACKEND URL - server.js deploy qilingan HTTP endpoint
-const API_URL = 'https://postgresql://postgres:lfNwjvskjuRFJKMbmhHiTCFTBPslvRYC@postgres.railway.internal:5432/railway'; // <--- bu sizning server URL
+const API_URL = 'https://caboose.proxy.rlwy.net/'; // <--- bu sizning server URL
 
 /* ================= LEADERBOARD ================= */
 window.loadLeaderboard = async function() {
