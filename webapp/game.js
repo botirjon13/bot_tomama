@@ -14,7 +14,7 @@ let highScore = Number(localStorage.getItem('highScore')) || 0;
 
 /* ================= ASSETS ================= */
 const assets = {};
-const path = 'assaets/'; // Bu papka nomini tekshiring, sizda "assaets" edi
+const path = 'assaets/'; // Bu papka nomi endi app.py tomonidan boshqariladi
 let assetsLoaded = false;
 let loadedCount = 0;
 const imagesToLoad = 3;
@@ -181,8 +181,8 @@ canvas.addEventListener('touchmove', moveBasket,{passive:false});
 canvas.addEventListener('mousemove', moveBasket);
 
 /* ================= API URL ================= */
-// BACKEND URL - server.js deploy qilingan HTTP endpoint
-const API_URL = 'https://YOUR_ACTUAL_DEPLOYMENT_URL_HERE'; // <--- BUNINGIZNI O'ZGARTIRING
+// BACKEND URL - Endi app.py ishlayotgan domen
+const API_URL = 'https://bot-telegram-production-d731.up.railway.app';
 
 /* ================= LEADERBOARD ================= */
 window.loadLeaderboard = async function() {
