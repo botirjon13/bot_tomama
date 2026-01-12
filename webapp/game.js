@@ -8,7 +8,7 @@ canvas.height = window.innerHeight;
 const tg = window.Telegram?.WebApp;
 let highScore = localStorage.getItem('highScore') || 0;
 
-let assets = {};
+let assaets = {};
 let imagesToLoad = 3; 
 let loadedCount = 0;
 let assetsLoaded = false;
