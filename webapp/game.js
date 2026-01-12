@@ -6,7 +6,7 @@ canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 
 // window.Telegram.WebApp obyektiga murojaatni to'g'rilash
-const tgWebApp = window.Telegram.WebApp;
+//const tgWebApp = window.Telegram.WebApp;
 const tgUser = tgWebApp?.initDataUnsafe?.user || null;
 
 /* ================= SCORE ================= */
@@ -182,7 +182,7 @@ canvas.addEventListener('mousemove', moveBasket);
 
 /* ================= API URL ================= */
 // BACKEND URL - Endi app.py ishlayotgan domen
-const API_URL = 'https://bot-telegram-production-d731.up.railway.app';
+const API_URL = 'https://bot-telegram-production-d731.up.railway.app/game';
 
 /* ================= LEADERBOARD ================= */
 window.loadLeaderboard = async function() {
