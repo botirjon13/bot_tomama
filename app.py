@@ -2,9 +2,6 @@ import os
 import psycopg2
 from flask import Flask, request, send_from_directory, jsonify
 import telebot
-from urllib.parse import urlparse
-import json
-import time # Vaqtinchalik kechikish uchun
 
 # =======================
 # SOZLAMALAR
@@ -14,7 +11,10 @@ TOKEN = os.environ.get("BOT_TOKEN")
 if not TOKEN:
     raise RuntimeError("BOT_TOKEN environment variable not set")
 
-DOMAIN = os.environ.get("DOMAIN", "https://bot-telegram-production-d731.up.railway.app")
+DOMAIN = os.environ.get("DOMAIN")
+if not DOMAIN:
+    raise RuntimeError("DOMAIN environment variable not set")
+
 WEBHOOK_PATH = f"/{TOKEN}"
 WEBHOOK_URL = DOMAIN + WEBHOOK_PATH
 
@@ -23,17 +23,14 @@ app = Flask(__name__, static_folder="webapp")
 
 PORT = int(os.environ.get("PORT", 8080))
 DATABASE_URL = os.environ.get("DATABASE_URL")
+if not DATABASE_URL:
+    raise RuntimeError("DATABASE_URL environment variable not set")
 
 # =======================
-# MA'LUMOTLAR BAZASI (POSTGRESQL) MANTIQI
+# DATABASE FUNKSIYALARI
 # =======================
 
 def get_db_connection():
-    if not DATABASE_URL:
-        print("❌ XATO: DATABASE_URL environment variable o'rnatilmagan!")
-        raise RuntimeError("DATABASE_URL environment variable not set")
-    
-    # Ulanishdan oldin log
     print(f"ℹ️ Bazaga ulanishga urinish: {DATABASE_URL}")
     conn = psycopg2.connect(DATABASE_URL, sslmode='require')
     print("✅ Baza bilan muvaffaqiyatli ulandik!")
@@ -64,14 +61,13 @@ def init_db():
         if conn: conn.close()
 
 # =======================
-# KLAWIATURA
+# TELEGRAM KLAWIATURA
 # =======================
 
 def main_keyboard():
     markup = telebot.types.ReplyKeyboardMarkup(resize_keyboard=True)
     markup.row("🔹 Korxona Haqida", "📞 Aloqa")
     markup.row("🌐 Saytga O'tish")
-
     webapp_url = DOMAIN + "/game"
     markup.row(
         telebot.types.KeyboardButton(
@@ -97,10 +93,7 @@ def start_handler(message):
 def about_handler(message):
     bot.send_message(
         message.chat.id,
-        "📢 *Tomama haqida*\n\n"
-        "2009-yildan buyon sifatli mahsulotlar.\n\n"
-        "📧 Email: tomama-uz@mail.ru\n"
-        "📞 Tel: +998905547400",
+        "📢 *Tomama haqida*\n\n2009-yildan buyon sifatli mahsulotlar.\n\n📧 Email: tomama-uz@mail.ru\n📞 Tel: +998905547400",
         parse_mode="Markdown"
     )
 
@@ -108,10 +101,7 @@ def about_handler(message):
 def contact_handler(message):
     bot.send_message(
         message.chat.id,
-        "📬 *Aloqa*\n\n"
-        "📞 +998905547400\n"
-        "🕘 09:00–18:00\n"
-        "📅 Dushanba–Juma",
+        "📬 *Aloqa*\n\n📞 +998905547400\n🕘 09:00–18:00\n📅 Dushanba–Juma",
         parse_mode="Markdown"
     )
 
@@ -137,7 +127,7 @@ def telegram_webhook():
     return "OK", 200
 
 # =======================
-# WEB APP (O‘YIN) ROUTES
+# WEBAPP (O‘YIN) ROUTES
 # =======================
 
 @app.route("/game")
@@ -146,11 +136,12 @@ def game():
 
 @app.route("/<path:path>")
 def static_files(path):
-    # Bu ham faqat webapp papkasidan fayl izlashiga ishonch hosil qilamiz
-    # Ehtiyot bo'ling, bu public_html kabi xizmat qiladi, faqat webapp ichida
     return send_from_directory("webapp", path)
 
-# Yangi: /score endpointini Python/Flask'da yaratish
+# =======================
+# SCORE & TOP10 ENDPOINTS
+# =======================
+
 @app.route("/score", methods=["POST"])
 def update_score():
     data = request.json
@@ -166,7 +157,6 @@ def update_score():
     try:
         conn = get_db_connection()
         cur = conn.cursor()
-        # UPSERT operatsiyasi (agar user bo'lsa yangilash, bo'lmasa qo'shish)
         cur.execute("""
             INSERT INTO leaderboard (telegram_id, username, photo_url, score)
             VALUES (%s, %s, %s, %s)
@@ -186,7 +176,6 @@ def update_score():
         if cur: cur.close()
         if conn: conn.close()
 
-# Yangi: /top10 endpointini Python/Flask'da yaratish
 @app.route("/top10", methods=["GET"])
 def get_top10():
     conn = None
@@ -200,16 +189,7 @@ def get_top10():
             LIMIT 10
         """)
         rows = cur.fetchall()
-        
-        # Natijalarni JSON formatiga o'tkazish (Dictionary listga)
-        top_users = []
-        for row in rows:
-            top_users.append({
-                "username": row[0],
-                "photo_url": row[1],
-                "score": row[2]
-            })
-        
+        top_users = [{"username": r[0], "photo_url": r[1], "score": r[2]} for r in rows]
         return jsonify(top_users)
     except psycopg2.Error as e:
         print(f"❌ /top10 error: {e}")
@@ -229,12 +209,10 @@ def index():
     return "✅ Tomama bot is running", 200
 
 # =======================
-# START
+# START SERVER
 # =======================
 
 if __name__ == "__main__":
-    # Server ishga tushishidan oldin biroz kechikish
-    print("ℹ️ Server ishga tushmoqda, 5 soniya kutamiz...")
-    # time.sleep(5) # Agar Railwayda xato loglar chiqmasa buni faollashtiring
-    init_db() # DB init funksiyasini ishga tushiramiz
+    print("ℹ️ Server ishga tushmoqda...")
+    init_db()
     app.run(host="0.0.0.0", port=PORT)
