@@ -5,7 +5,7 @@ const ctx = canvas.getContext('2d');
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 
-//const tg = window.Telegram?.WebApp;
+const tg = window.Telegram?.WebApp;
 const tgUser = tg?.initDataUnsafe?.user || null;
 
 /* ================= SCORE ================= */
@@ -43,13 +43,7 @@ assets.bad.onload = imageLoaded;
 assets.bad.onerror = imageError;
 
 /* ================= GAME STATE ================= */
-let basket = {
-    x: canvas.width / 2 - 60,
-    y: canvas.height - 160,
-    width: 120,
-    height: 85
-};
-
+let basket = { x: canvas.width/2 - 60, y: canvas.height - 160, width: 120, height: 85 };
 let items = [];
 let score = 0;
 let lives = 3;
@@ -100,66 +94,53 @@ function update(time = 0) {
         lastSpawn = 0;
     }
 
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.clearRect(0,0,canvas.width,canvas.height);
 
     // Basket
-    if (assetsLoaded) {
-        ctx.drawImage(assets.basket, basket.x, basket.y, basket.width, basket.height);
-    } else {
-        ctx.fillStyle = 'brown';
-        ctx.fillRect(basket.x, basket.y, basket.width, basket.height);
-    }
+    if (assetsLoaded) ctx.drawImage(assets.basket, basket.x, basket.y, basket.width, basket.height);
+    else { ctx.fillStyle='brown'; ctx.fillRect(basket.x,basket.y,basket.width,basket.height); }
 
     // Items
-    for (let i = 0; i < items.length; i++) {
+    for (let i=0;i<items.length;i++){
         const p = items[i];
         p.y += speed * delta * 0.06;
 
-        if (assetsLoaded) {
-            ctx.drawImage(p.image, p.x, p.y, p.width, p.height);
-        } else {
-            ctx.fillStyle = p.type === 'good' ? 'red' : 'black';
-            ctx.fillRect(p.x, p.y, p.width, p.height);
-        }
+        if (assetsLoaded) ctx.drawImage(p.image, p.x, p.y, p.width, p.height);
+        else { ctx.fillStyle = p.type==='good'?'red':'black'; ctx.fillRect(p.x,p.y,p.width,p.height); }
 
         // Collision
-        if (
-            p.y + p.height >= basket.y + 20 &&
-            p.y <= basket.y + 50 &&
-            p.x + p.width >= basket.x + 10 &&
-            p.x <= basket.x + basket.width - 10
-        ) {
-            if (p.type === 'good') {
+        if (p.y + p.height >= basket.y + 20 && p.y <= basket.y + 50 &&
+            p.x + p.width >= basket.x + 10 && p.x <= basket.x + basket.width - 10) {
+
+            if (p.type==='good') {
                 combo++;
-                const mult = Math.floor(combo / 5) + 1;
-                score += 10 * mult;
+                const mult = Math.floor(combo/5)+1;
+                score += 10*mult;
                 haptic('good');
 
-                if (score > highScore) {
-                    highScore = score;
-                    localStorage.setItem('highScore', highScore);
+                if(score>highScore){
+                    highScore=score;
+                    localStorage.setItem('highScore',highScore);
                 }
             } else {
                 lives--;
-                combo = 0;
+                combo=0;
                 haptic('bad');
             }
-            items.splice(i, 1);
-            i--;
-            if (lives <= 0) return gameOver();
+            items.splice(i,1); i--;
+            if(lives<=0) return gameOver();
             continue;
         }
 
         // Miss
-        if (p.y > canvas.height) {
-            if (p.type === 'good') {
+        if(p.y>canvas.height){
+            if(p.type==='good'){
                 lives--;
-                combo = 0;
+                combo=0;
                 haptic('bad');
             }
-            items.splice(i, 1);
-            i--;
-            if (lives <= 0) return gameOver();
+            items.splice(i,1); i--;
+            if(lives<=0) return gameOver();
         }
     }
 
@@ -168,78 +149,102 @@ function update(time = 0) {
 }
 
 /* ================= UI ================= */
-function drawUI() {
-    ctx.fillStyle = 'rgba(0,0,0,0.5)';
+function drawUI(){
+    ctx.fillStyle='rgba(0,0,0,0.5)';
     ctx.beginPath();
-    ctx.roundRect(15, 15, 220, 120, 15);
+    ctx.roundRect(15,15,220,120,15);
     ctx.fill();
 
-    ctx.fillStyle = '#fff';
-    ctx.font = 'bold 20px Arial';
-    ctx.fillText(`🏆 Ochko: ${score}`, 30, 45);
-    ctx.fillStyle = '#FFD700';
-    ctx.fillText(`⭐ Rekord: ${highScore}`, 30, 75);
-    ctx.fillStyle = '#fff';
-    ctx.fillText(`❤️ ${'❤️'.repeat(Math.max(0, lives))}`, 30, 105);
+    ctx.fillStyle='#fff';
+    ctx.font='bold 20px Arial';
+    ctx.fillText(`🏆 Ochko: ${score}`,30,45);
+    ctx.fillStyle='#FFD700';
+    ctx.fillText(`⭐ Rekord: ${highScore}`,30,75);
+    ctx.fillStyle='#fff';
+    ctx.fillText(`❤️ ${'❤️'.repeat(Math.max(0,lives))}`,30,105);
 
-    if (combo >= 2) {
-        ctx.fillStyle = '#ADFF2F';
-        ctx.font = 'italic bold 22px Arial';
-        ctx.fillText(`Combo x${combo}`, 30, 145);
+    if(combo>=2){
+        ctx.fillStyle='#ADFF2F';
+        ctx.font='italic bold 22px Arial';
+        ctx.fillText(`Combo x${combo}`,30,145);
     }
 }
 
 /* ================= INPUT ================= */
-function moveBasket(e) {
+function moveBasket(e){
     e.preventDefault();
     const x = e.touches ? e.touches[0].clientX : e.clientX;
-    basket.x = x - basket.width / 2;
-    basket.x = Math.max(0, Math.min(canvas.width - basket.width, basket.x));
+    basket.x = Math.max(0, Math.min(canvas.width-basket.width, x - basket.width/2));
 }
-canvas.addEventListener('touchmove', moveBasket, { passive: false });
+canvas.addEventListener('touchmove', moveBasket,{passive:false});
 canvas.addEventListener('mousemove', moveBasket);
 
-/* ================= LEADERBOARD (READY) ================= */
-// ⬇️ bu joyga backend ulaymiz (keyingi bosqichda)
-async function sendScoreToLeaderboard(finalScore) {
-    if (!tgUser) return;
+/* ================= LEADERBOARD ================= */
+const API_URL = 'https://YOUR_BACKEND_URL'; // 🚨 Postgres backend endpoint
 
-    console.log('SEND SCORE:', {
-        id: tgUser.id,
+async function sendScoreToLeaderboard(finalScore){
+    if(!tgUser) return;
+
+    const payload = {
+        telegram_id: tgUser.id,
         name: tgUser.first_name,
         username: tgUser.username,
         photo: tgUser.photo_url,
         score: finalScore
-    });
+    };
 
-    // bu yerga fetch(Supabase / Firebase) qo‘shiladi
+    try{
+        const res = await fetch(`${API_URL}/leaderboard`,{
+            method:'POST',
+            headers:{ 'Content-Type':'application/json' },
+            body: JSON.stringify(payload)
+        });
+        if(!res.ok) console.warn('Leaderboard save failed');
+    }catch(e){
+        console.error(e);
+    }
+}
+
+async function fetchTop10(){
+    try{
+        const res = await fetch(`${API_URL}/leaderboard/top10`);
+        if(!res.ok) return [];
+        return await res.json();
+    }catch(e){ console.error(e); return []; }
 }
 
 /* ================= GAME OVER ================= */
-function gameOver() {
-    isGameOver = true;
-    sendScoreToLeaderboard(score);
+async function gameOver(){
+    isGameOver=true;
+    await sendScoreToLeaderboard(score);
 
-    if (tg) {
+    // Telegram MainButton
+    if(tg){
         tg.MainButton.setText(`Natija: ${score}`);
         tg.MainButton.show();
-        tg.MainButton.onClick(() => location.reload());
-    } else {
-        alert("O'yin tugadi! Natija: " + score);
+        tg.MainButton.onClick(()=>location.reload());
+    }else{
+        alert(`O'yin tugadi! Natija: ${score}`);
         location.reload();
     }
 }
 
 /* ================= START ================= */
-window.startGameLoop = function () {
-    score = 0;
-    lives = 3;
-    combo = 0;
-    items = [];
-    isGameOver = false;
-    lastTime = 0;
-    lastSpawn = 0;
-
-    if (tg) tg.MainButton.hide();
+window.startGameLoop = function(){
+    score=0; lives=3; combo=0; items=[]; isGameOver=false; lastTime=0; lastSpawn=0;
+    if(tg) tg.MainButton.hide();
     requestAnimationFrame(update);
+};
+
+/* ================= REYTING (OPTIONAL) ================= */
+window.showTop10 = async function(containerId){
+    const listEl = document.getElementById(containerId);
+    if(!listEl) return;
+    listEl.innerHTML='';
+    const data = await fetchTop10();
+    data.forEach((u,i)=>{
+        const li = document.createElement('li');
+        li.innerHTML=`${i+1}. <img src="${u.photo||''}" style="width:25px;height:25px;border-radius:50%;margin-right:8px;"> ${u.username||u.name} - ${u.score} ochko`;
+        listEl.appendChild(li);
+    });
 };
