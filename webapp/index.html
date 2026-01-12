@@ -40,12 +40,9 @@
 <div id="rankingMenu" class="menu-container hidden">
   <div class="menu-box">
       <h2>🏆 Top-10 Reyting</h2>
-
-      <!-- 🔥 REAL DATA SHU YERGA TUSHADI -->
       <ul id="rankingList">
           <li class="loading">Yuklanmoqda...</li>
       </ul>
-
       <button class="back-btn" onclick="hideRanking()">⬅️ Ortga</button>
   </div>
 </div>
@@ -65,8 +62,15 @@
 <canvas id="gameCanvas" class="hidden"></canvas>
 
 <script>
+/* ================= DOM ELEMENTS ================= */
+const mainMenu = document.getElementById('mainMenu');
+const rankingMenu = document.getElementById('rankingMenu');
+const couponsMenu = document.getElementById('couponsMenu');
+const gameCanvas = document.getElementById('gameCanvas');
+
 /* ================= TELEGRAM INIT ================= */
 const tg = window.Telegram?.WebApp;
+const tgUser = tg?.initDataUnsafe?.user || null;
 if (tg) {
     tg.ready();
     tg.expand();
@@ -88,8 +92,6 @@ function startGame() {
 function showRanking() {
     mainMenu.classList.add('hidden');
     rankingMenu.classList.remove('hidden');
-
-    // game.js ichidan chaqiriladi (keyin backend ulanganida)
     if (window.loadLeaderboard) window.loadLeaderboard();
 }
 
