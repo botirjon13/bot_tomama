@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Tomama O‘yini</title>
   
-  <!-- Telegram SDK (manzilini to'g'irladim) -->
+  <!-- Telegram SDK - To'g'ri manzil (Tugmalar ishlashi uchun muhim) -->
   <script src="telegram.org"></script>
   
   <link rel="stylesheet" href="style.css">
@@ -23,6 +23,13 @@
   <div id="mainMenu" class="menu-container">
     <div class="menu-box">
         <img src="assaets/logo.png" alt="Tomama Logo" class="game-logo">
+        
+        <!-- SHAXSIY REKORD EKRANI -->
+        <div id="recordBox" style="color: #fff; margin-bottom: 20px; background: rgba(0,0,0,0.2); padding: 10px; border-radius: 15px;">
+            <span style="font-size: 14px; opacity: 0.8;">Sizning rekordingiz:</span><br>
+            <strong id="personalBest" style="font-size: 24px; color: #ffd700;">0</strong>
+        </div>
+
         <button onclick="startGame()">▶️ O'yinni boshlash</button>
         <button onclick="showRanking()">🏆 Reyting (Top-10)</button>
         <button onclick="showCoupons()">🎫 Kuponlarim</button>
@@ -34,12 +41,11 @@
     <div class="menu-box">
         <h2>🏆 Reyting (Top-10)</h2>
         <ul id="rankingList">
-            <!-- Reyting elementlari JS orqali qo'shiladi -->
             <li>1. Sardorbek - 1500 ochko</li>
             <li>2. Ali - 1200 ochko</li>
             <li>3. User3 - 800 ochko</li>
         </ul>
-        <button onclick="hideRanking()">⬅️ Ortga</button>
+        <button onclick="hideRanking()" class="back-btn">⬅️ Ortga</button>
     </div>
   </div>
 
@@ -48,11 +54,9 @@
     <div class="menu-box">
         <h2>🎫 Kuponlarim</h2>
         <ul id="couponList">
-            <!-- Kuponlar JS orqali qo'shiladi -->
-            <li class="active">Kupon-12345 (Aktiv)</li>
-            <li class="used">Kupon-67890 (Ishlatilgan)</li>
+            <li class="active">Kuponlar hozircha yo'q</li>
         </ul>
-        <button onclick="hideCoupons()">⬅️ Ortga</button>
+        <button onclick="hideCoupons()" class="back-btn">⬅️ Ortga</button>
     </div>
   </div>
 
@@ -61,25 +65,33 @@
   <canvas id="gameCanvas" class="hidden"></canvas>
 
   <script>
-    // Telegram WebApp ni xavfsiz ishga tushirish
-    const tg = window.Telegram.WebApp;
+    // Telegram WebApp ni ishga tushirish
+    const tg = window.Telegram?.WebApp;
     if (tg) {
         tg.ready();
         tg.expand();
     }
 
-    // --- MENYU FUNKSIYALARI (global scope ga qo'shildi) ---
+    // Sahifa yuklanganda saqlangan rekordni chiqarish
+    window.addEventListener('load', () => {
+        const highScore = localStorage.getItem('highScore') || 0;
+        document.getElementById('personalBest').innerText = highScore;
+    });
+
+    // --- MENYU FUNKSIYALARI ---
     function startGame() {
         document.getElementById('mainMenu').classList.add('hidden');
         document.getElementById('gameCanvas').classList.remove('hidden');
-        // game.js dagi update() funksiyasini qo'lda chaqiramiz endi
-        if (window.startGameLoop) window.startGameLoop(); 
+        
+        // game.js yuklanganini tekshirib keyin ishga tushiramiz
+        if (window.startGameLoop) {
+            window.startGameLoop(); 
+        }
     }
 
     function showRanking() {
         document.getElementById('mainMenu').classList.add('hidden');
         document.getElementById('rankingMenu').classList.remove('hidden');
-        // Haqiqiy reytingni API dan olish funksiyasi bu yerda bo'ladi
     }
 
     function hideRanking() {
@@ -90,7 +102,6 @@
     function showCoupons() {
         document.getElementById('mainMenu').classList.add('hidden');
         document.getElementById('couponsMenu').classList.remove('hidden');
-        // Haqiqiy kuponlarni API dan olish funksiyasi bu yerda bo'ladi
     }
 
     function hideCoupons() {
