@@ -1,24 +1,98 @@
-/* Sizning kodingizga qo'shimcha */
-#gameCanvas {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    z-index: 50; /* Menyu tagida, lekin fondan tepada */
-    background: linear-gradient(to bottom, #87CEEB, #E0F7FA);
-}
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Tomama O‘yini</title>
+  
+  <!-- Telegram SDK - To'g'ri manzil -->
+  <script src="telegram.org"></script>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
 
-/* Tugma bosilganda animatsiya */
-.menu-box button:hover {
-    filter: brightness(1.1);
-}
+<!-- FONDA HARAKATLANUVCHI POMIDORLAR -->
+<div class="bg-elements">
+    <img src="assaets/products/tomatoFon.png" class="floating-item item-1">
+    <img src="assaets/products/tomatoFon.png" class="floating-item item-2">
+    <img src="assaets/products/tomatoFon.png" class="floating-item item-3">
+</div>
+  
+  <!-- ASOSIY MENYU OYNASI -->
+  <div id="mainMenu" class="menu-container">
+    <div class="menu-box">
+        <img src="assets/logo.png" alt="Tomama Logo" class="game-logo">
+        <h3 id="bestScoreText" style="color: gold; margin-bottom: 15px;">Rekord: 0</h3>
+        <button onclick="startGame()">▶️ O'yinni boshlash</button>
+        <button onclick="showRanking()">🏆 Reyting (Top-10)</button>
+        <button onclick="showCoupons()">🎫 Kuponlarim</button>
+    </div>
+  </div>
 
-/* Ranking va Coupon listlar uchun scroll */
-#rankingList::-webkit-scrollbar {
-    width: 5px;
-}
-#rankingList::-webkit-scrollbar-thumb {
-    background: rgba(255,255,255,0.3);
-    border-radius: 10px;
-}
+  <!-- REYTING OYNASI -->
+  <div id="rankingMenu" class="menu-container hidden">
+    <div class="menu-box">
+        <h2>🏆 Reyting (Top-10)</h2>
+        <ul id="rankingList">
+            <li>Yuklanmoqda...</li>
+        </ul>
+        <button class="back-btn" onclick="hideRanking()">⬅️ Ortga</button>
+    </div>
+  </div>
+
+  <!-- KUPONLAR OYNASI -->
+  <div id="couponsMenu" class="menu-container hidden">
+    <div class="menu-box">
+        <h2>🎫 Kuponlarim</h2>
+        <ul id="couponList">
+            <li>Kuponlar hozircha yo'q</li>
+        </ul>
+        <button class="back-btn" onclick="hideCoupons()">⬅️ Ortga</button>
+    </div>
+  </div>
+
+  <!-- O'YIN MAYDONI -->
+  <canvas id="gameCanvas" class="hidden"></canvas>
+
+  <script src="game.js"></script>
+  <script>
+    const tg = window.Telegram?.WebApp;
+    if (tg) {
+        tg.ready();
+        tg.expand();
+    }
+
+    // Sahifa yuklanganda rekordni yangilash
+    window.onload = () => {
+        const hs = localStorage.getItem('highScore') || 0;
+        document.getElementById('bestScoreText').innerText = `Sizning rekordingiz: ${hs}`;
+    };
+
+    function startGame() {
+        document.getElementById('mainMenu').classList.add('hidden');
+        document.getElementById('gameCanvas').classList.remove('hidden');
+        if (window.startGameLoop) window.startGameLoop(); 
+    }
+
+    function showRanking() {
+        document.getElementById('mainMenu').classList.add('hidden');
+        document.getElementById('rankingMenu').classList.remove('hidden');
+    }
+
+    function hideRanking() {
+        document.getElementById('mainMenu').classList.remove('hidden');
+        document.getElementById('rankingMenu').classList.add('hidden');
+    }
+    
+    function showCoupons() {
+        document.getElementById('mainMenu').classList.add('hidden');
+        document.getElementById('couponsMenu').classList.remove('hidden');
+    }
+
+    function hideCoupons() {
+        document.getElementById('mainMenu').classList.remove('hidden');
+        document.getElementById('couponsMenu').classList.add('hidden');
+    }
+  </script>
+</body>
+</html>
