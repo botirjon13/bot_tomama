@@ -5,7 +5,7 @@ const ctx = canvas.getContext('2d');
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 
-const tg = window.Telegram?.WebApp;
+//const tg = window.Telegram?.WebApp;
 const tgUser = tg?.initDataUnsafe?.user || null;
 
 /* ================= SCORE ================= */
