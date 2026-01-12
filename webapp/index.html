@@ -1,71 +1,60 @@
 <!DOCTYPE html>
 <html lang="uz">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Tomama O‘yini</title>
-  
-  <!-- Telegram SDK - To'g'ri manzil -->
-  <script src="telegram.org"></script>
-  <link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Tomama O‘yini</title>
+    <!-- Telegram SDK manzili to'g'rilandi -->
+    <script src="telegram.org"></script>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<!-- FONDA HARAKATLANUVCHI POMIDORLAR -->
 <div class="bg-elements">
     <img src="assaets/products/tomatoFon.png" class="floating-item item-1">
     <img src="assaets/products/tomatoFon.png" class="floating-item item-2">
     <img src="assaets/products/tomatoFon.png" class="floating-item item-3">
 </div>
   
-  <!-- ASOSIY MENYU OYNASI -->
-  <div id="mainMenu" class="menu-container">
+<div id="mainMenu" class="menu-container">
     <div class="menu-box">
-        <img src="assets/logo.png" alt="Tomama Logo" class="game-logo">
+        <img src="assaets/logo.png" alt="Tomama Logo" class="game-logo">
         <h3 id="bestScoreText" style="color: gold; margin-bottom: 15px;">Rekord: 0</h3>
         <button onclick="startGame()">▶️ O'yinni boshlash</button>
         <button onclick="showRanking()">🏆 Reyting (Top-10)</button>
         <button onclick="showCoupons()">🎫 Kuponlarim</button>
     </div>
-  </div>
+</div>
 
-  <!-- REYTING OYNASI -->
-  <div id="rankingMenu" class="menu-container hidden">
+<div id="rankingMenu" class="menu-container hidden">
     <div class="menu-box">
         <h2>🏆 Reyting (Top-10)</h2>
-        <ul id="rankingList">
-            <li>Yuklanmoqda...</li>
-        </ul>
+        <ul id="rankingList"><li>Yuklanmoqda...</li></ul>
         <button class="back-btn" onclick="hideRanking()">⬅️ Ortga</button>
     </div>
-  </div>
+</div>
 
-  <!-- KUPONLAR OYNASI -->
-  <div id="couponsMenu" class="menu-container hidden">
+<div id="couponsMenu" class="menu-container hidden">
     <div class="menu-box">
         <h2>🎫 Kuponlarim</h2>
-        <ul id="couponList">
-            <li>Kuponlar hozircha yo'q</li>
-        </ul>
+        <ul id="couponList"><li>Hozircha yo'q</li></ul>
         <button class="back-btn" onclick="hideCoupons()">⬅️ Ortga</button>
     </div>
-  </div>
+</div>
 
-  <!-- O'YIN MAYDONI -->
-  <canvas id="gameCanvas" class="hidden"></canvas>
+<canvas id="gameCanvas" class="hidden"></canvas>
 
-  <script src="game.js"></script>
-  <script>
+<script src="game.js"></script>
+<script>
     const tg = window.Telegram?.WebApp;
     if (tg) {
         tg.ready();
         tg.expand();
     }
 
-    // Sahifa yuklanganda rekordni yangilash
     window.onload = () => {
         const hs = localStorage.getItem('highScore') || 0;
-        document.getElementById('bestScoreText').innerText = `Sizning rekordingiz: ${hs}`;
+        document.getElementById('bestScoreText').innerText = `Rekord: ${hs}`;
     };
 
     function startGame() {
@@ -93,6 +82,6 @@
         document.getElementById('mainMenu').classList.remove('hidden');
         document.getElementById('couponsMenu').classList.add('hidden');
     }
-  </script>
+</script>
 </body>
 </html>
