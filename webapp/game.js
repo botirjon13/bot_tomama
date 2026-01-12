@@ -180,7 +180,7 @@ canvas.addEventListener('touchmove', moveBasket,{passive:false});
 canvas.addEventListener('mousemove', moveBasket);
 
 /* ================= LEADERBOARD ================= */
-const API_URL = 'https://YOUR_BACKEND_URL'; // 🚨 Postgres backend endpoint
+const API_URL = 'postgresql://postgres:lfNwjvskjuRFJKMbmhHiTCFTBPslvRYC@postgres.railway.internal:5432/railway'; // 🚨 Postgres backend endpoint
 
 async function sendScoreToLeaderboard(finalScore){
     if(!tgUser) return;
