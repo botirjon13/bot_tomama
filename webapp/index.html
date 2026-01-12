@@ -41,4 +41,74 @@
   <div class="menu-box">
       <h2>🏆 Top-10 Reyting</h2>
 
-      <!--
+      <!-- 🔥 REAL DATA SHU YERGA TUSHADI -->
+      <ul id="rankingList">
+          <li class="loading">Yuklanmoqda...</li>
+      </ul>
+
+      <button class="back-btn" onclick="hideRanking()">⬅️ Ortga</button>
+  </div>
+</div>
+
+<!-- ================= COUPONS ================= -->
+<div id="couponsMenu" class="menu-container hidden">
+  <div class="menu-box">
+      <h2>🎫 Kuponlarim</h2>
+      <ul id="couponList">
+          <li class="active">Hozircha kuponlar yo‘q</li>
+      </ul>
+      <button class="back-btn" onclick="hideCoupons()">⬅️ Ortga</button>
+  </div>
+</div>
+
+<!-- ================= GAME CANVAS ================= -->
+<canvas id="gameCanvas" class="hidden"></canvas>
+
+<script>
+/* ================= TELEGRAM INIT ================= */
+const tg = window.Telegram?.WebApp;
+if (tg) {
+    tg.ready();
+    tg.expand();
+}
+
+/* ================= PERSONAL BEST ================= */
+window.addEventListener('load', () => {
+    document.getElementById('personalBest').innerText =
+        localStorage.getItem('highScore') || 0;
+});
+
+/* ================= MENU FUNCTIONS ================= */
+function startGame() {
+    mainMenu.classList.add('hidden');
+    gameCanvas.classList.remove('hidden');
+    if (window.startGameLoop) window.startGameLoop();
+}
+
+function showRanking() {
+    mainMenu.classList.add('hidden');
+    rankingMenu.classList.remove('hidden');
+
+    // game.js ichidan chaqiriladi (keyin backend ulanganida)
+    if (window.loadLeaderboard) window.loadLeaderboard();
+}
+
+function hideRanking() {
+    rankingMenu.classList.add('hidden');
+    mainMenu.classList.remove('hidden');
+}
+
+function showCoupons() {
+    mainMenu.classList.add('hidden');
+    couponsMenu.classList.remove('hidden');
+}
+
+function hideCoupons() {
+    couponsMenu.classList.add('hidden');
+    mainMenu.classList.remove('hidden');
+}
+</script>
+
+<script src="game.js"></script>
+</body>
+</html>
