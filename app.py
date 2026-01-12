@@ -4,6 +4,7 @@ from flask import Flask, request, send_from_directory, jsonify
 import telebot
 from urllib.parse import urlparse
 import json
+import time # Vaqtinchalik kechikish uchun
 
 # =======================
 # SOZLAMALAR
@@ -29,14 +30,18 @@ DATABASE_URL = os.environ.get("DATABASE_URL")
 
 def get_db_connection():
     if not DATABASE_URL:
+        print("❌ XATO: DATABASE_URL environment variable o'rnatilmagan!")
         raise RuntimeError("DATABASE_URL environment variable not set")
     
-    # Railway'da SSL talab qilinishi mumkin, shuning uchun 'sslmode=require' qo'shamiz
+    # Ulanishdan oldin log
+    print(f"ℹ️ Bazaga ulanishga urinish: {DATABASE_URL}")
     conn = psycopg2.connect(DATABASE_URL, sslmode='require')
+    print("✅ Baza bilan muvaffaqiyatli ulandik!")
     return conn
 
 def init_db():
     conn = None
+    cur = None
     try:
         conn = get_db_connection()
         cur = conn.cursor()
@@ -51,7 +56,7 @@ def init_db():
             )
         """)
         conn.commit()
-        print("✅ DB ready")
+        print("✅ DB ready (Jadvallar yaratildi/tekshirildi)")
     except psycopg2.Error as e:
         print(f"❌ DB init error: {e}")
     finally:
@@ -59,7 +64,7 @@ def init_db():
         if conn: conn.close()
 
 # =======================
-# KLAWIATURA (O'ZGARMAGAN)
+# KLAWIATURA
 # =======================
 
 def main_keyboard():
@@ -77,7 +82,7 @@ def main_keyboard():
     return markup
 
 # =======================
-# BOT HANDLERLARI (O'ZGARMAGAN)
+# BOT HANDLERLARI
 # =======================
 
 @bot.message_handler(commands=["start"])
@@ -87,7 +92,7 @@ def start_handler(message):
         "🍅 Tomama botiga xush kelibsiz!\nQuyidagi menyudan foydalaning 👇",
         reply_markup=main_keyboard()
     )
-# ... boshqa handlerlar shu yerda qoladi (about, contact, site) ...
+
 @bot.message_handler(func=lambda m: m.text == "🔹 Korxona Haqida")
 def about_handler(message):
     bot.send_message(
@@ -121,9 +126,8 @@ def site_handler(message):
     )
     bot.send_message(message.chat.id, "🌍 Rasmiy sayt:", reply_markup=kb)
 
-
 # =======================
-# TELEGRAM WEBHOOK (O'ZGARMAGAN)
+# TELEGRAM WEBHOOK
 # =======================
 
 @app.route(WEBHOOK_PATH, methods=["POST"])
@@ -138,13 +142,12 @@ def telegram_webhook():
 
 @app.route("/game")
 def game():
-    # Bu endi server.js emas, balki app.py ishlatayotgani uchun,
-    # frontenddagi API_URL'ni DOMAIN manziliga o'zgartirish kerak bo'ladi.
     return send_from_directory("webapp", "index.html")
 
 @app.route("/<path:path>")
 def static_files(path):
     # Bu ham faqat webapp papkasidan fayl izlashiga ishonch hosil qilamiz
+    # Ehtiyot bo'ling, bu public_html kabi xizmat qiladi, faqat webapp ichida
     return send_from_directory("webapp", path)
 
 # Yangi: /score endpointini Python/Flask'da yaratish
@@ -198,11 +201,15 @@ def get_top10():
         """)
         rows = cur.fetchall()
         
-        # Natijalarni JSON formatiga o'tkazish
-        top_users = [
-            {"username": row[0], "photo_url": row[1], "score": row[2]}
-            for row in rows
-        ]
+        # Natijalarni JSON formatiga o'tkazish (Dictionary listga)
+        top_users = []
+        for row in rows:
+            top_users.append({
+                "username": row[0],
+                "photo_url": row[1],
+                "score": row[2]
+            })
+        
         return jsonify(top_users)
     except psycopg2.Error as e:
         print(f"❌ /top10 error: {e}")
@@ -212,7 +219,7 @@ def get_top10():
         if conn: conn.close()
 
 # =======================
-# HEALTH CHECK + WEBHOOK SET (O'ZGARMAGAN)
+# HEALTH CHECK + WEBHOOK SET
 # =======================
 
 @app.route("/")
@@ -226,5 +233,8 @@ def index():
 # =======================
 
 if __name__ == "__main__":
+    # Server ishga tushishidan oldin biroz kechikish
+    print("ℹ️ Server ishga tushmoqda, 5 soniya kutamiz...")
+    # time.sleep(5) # Agar Railwayda xato loglar chiqmasa buni faollashtiring
     init_db() # DB init funksiyasini ishga tushiramiz
     app.run(host="0.0.0.0", port=PORT)
