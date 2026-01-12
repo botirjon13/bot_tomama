@@ -5,14 +5,16 @@ const ctx = canvas.getContext('2d');
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 
-const tgUser = tg?.initDataUnsafe?.user || null;
+// window.Telegram.WebApp obyektiga murojaatni to'g'rilash
+const tgWebApp = window.Telegram.WebApp;
+const tgUser = tgWebApp?.initDataUnsafe?.user || null;
 
 /* ================= SCORE ================= */
 let highScore = Number(localStorage.getItem('highScore')) || 0;
 
 /* ================= ASSETS ================= */
 const assets = {};
-const path = 'assaets/';
+const path = 'assaets/'; // Bu papka nomini tekshiring, sizda "assaets" edi
 let assetsLoaded = false;
 let loadedCount = 0;
 const imagesToLoad = 3;
@@ -57,9 +59,9 @@ let spawnDelay = 1000;
 
 /* ================= HAPTIC ================= */
 function haptic(type) {
-    if (!tg || !tg.HapticFeedback) return;
-    if (type === 'good') tg.HapticFeedback.impactOccurred('medium');
-    if (type === 'bad') tg.HapticFeedback.notificationOccurred('error');
+    if (!tgWebApp || !tgWebApp.HapticFeedback) return;
+    if (type === 'good') tgWebApp.HapticFeedback.impactOccurred('medium');
+    if (type === 'bad') tgWebApp.HapticFeedback.notificationOccurred('error');
 }
 
 /* ================= SPAWN ================= */
@@ -180,7 +182,7 @@ canvas.addEventListener('mousemove', moveBasket);
 
 /* ================= API URL ================= */
 // BACKEND URL - server.js deploy qilingan HTTP endpoint
-const API_URL = 'https://caboose.proxy.rlwy.net'; // <--- bu sizning server URL
+const API_URL = 'https://YOUR_ACTUAL_DEPLOYMENT_URL_HERE'; // <--- BUNINGIZNI O'ZGARTIRING
 
 /* ================= LEADERBOARD ================= */
 window.loadLeaderboard = async function() {
@@ -228,10 +230,10 @@ async function gameOver(){
         } catch(e){ console.error(e); }
     }
 
-    if(tg){
-        tg.MainButton.setText(`Natija: ${score}`);
-        tg.MainButton.show();
-        tg.MainButton.onClick(()=>location.reload());
+    if(tgWebApp){ // window.Telegram.WebApp ni tekshiramiz
+        tgWebApp.MainButton.setText(`Natija: ${score}`);
+        tgWebApp.MainButton.show();
+        tgWebApp.MainButton.onClick(()=>location.reload());
     } else {
         alert(`O'yin tugadi! Natija: ${score}`);
         location.reload();
@@ -241,6 +243,6 @@ async function gameOver(){
 /* ================= START ================= */
 window.startGameLoop = function(){
     score=0; lives=3; combo=0; items=[]; isGameOver=false; lastTime=0; lastSpawn=0;
-    if(tg) tg.MainButton.hide();
+    if(tgWebApp) tgWebApp.MainButton.hide(); // window.Telegram.WebApp ni tekshiramiz
     requestAnimationFrame(update);
 };
