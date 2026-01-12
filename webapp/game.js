@@ -5,7 +5,7 @@ canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 
 // Telegram WebApp va Rekord tizimi
-const tg = window.Telegram?.WebApp;
+//const tg = window.Telegram?.WebApp;
 let highScore = localStorage.getItem('highScore') || 0;
 
 let assets = {};
