@@ -1,6 +1,7 @@
 {
   "name": "tomama-backend",
   "version": "1.0.0",
+  "type": "module",           <----- shu qator
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
