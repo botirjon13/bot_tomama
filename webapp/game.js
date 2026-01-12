@@ -31,7 +31,7 @@ function imageError(e) {
 const path = 'assaets/';
 
 assets.basket = new Image();
-assets.basket.src = path + 'assaets/basket.png';
+assets.basket.src = path + 'basket.png';
 assets.basket.onload = imageLoaded;
 assets.basket.onerror = imageError;
 
