@@ -180,7 +180,7 @@ canvas.addEventListener('touchmove', moveBasket,{passive:false});
 canvas.addEventListener('mousemove', moveBasket);
 
 /* ================= API URL ================= */
-const API_URL = 'https://YOUR_RAILWAY_APP_URL'; // <--- o'zingiz URL qo'yasiz
+const API_URL = 'postgresql://postgres:lfNwjvskjuRFJKMbmhHiTCFTBPslvRYC@postgres.railway.internal:5432/railway'; // <--- o'zingiz URL qo'yasiz
 
 /* ================= LEADERBOARD ================= */
 window.loadLeaderboard = async function() {
