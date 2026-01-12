@@ -5,7 +5,7 @@ const ctx = canvas.getContext('2d');
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 
-//const tg = window.Telegram?.WebApp;
+const tg = window.Telegram?.WebApp;
 const tgUser = tg?.initDataUnsafe?.user || null;
 
 /* ================= SCORE ================= */
@@ -179,51 +179,60 @@ function moveBasket(e){
 canvas.addEventListener('touchmove', moveBasket,{passive:false});
 canvas.addEventListener('mousemove', moveBasket);
 
+/* ================= API URL ================= */
+const API_URL = 'https://YOUR_RAILWAY_APP_URL'; // <--- o'zingiz URL qo'yasiz
+
 /* ================= LEADERBOARD ================= */
-const API_URL = 'postgresql://postgres:lfNwjvskjuRFJKMbmhHiTCFTBPslvRYC@postgres.railway.internal:5432/railway'; // 🚨 Postgres backend endpoint
+window.loadLeaderboard = async function() {
+    const listEl = document.getElementById('rankingList');
+    listEl.innerHTML = '<li class="loading">Yuklanmoqda...</li>';
 
-async function sendScoreToLeaderboard(finalScore){
-    if(!tgUser) return;
+    try {
+        const res = await fetch(`${API_URL}/top10`);
+        const data = await res.json();
 
-    const payload = {
-        telegram_id: tgUser.id,
-        name: tgUser.first_name,
-        username: tgUser.username,
-        photo: tgUser.photo_url,
-        score: finalScore
-    };
-
-    try{
-        const res = await fetch(`${API_URL}/leaderboard`,{
-            method:'POST',
-            headers:{ 'Content-Type':'application/json' },
-            body: JSON.stringify(payload)
+        listEl.innerHTML = '';
+        data.forEach((u,i)=>{
+            const li = document.createElement('li');
+            li.innerHTML = `
+                ${i+1}. 
+                <img src="${u.photo_url||''}" style="width:25px;height:25px;border-radius:50%;margin-right:8px;">
+                ${u.username||'Anonim'} - ${u.score} ochko
+            `;
+            listEl.appendChild(li);
         });
-        if(!res.ok) console.warn('Leaderboard save failed');
-    }catch(e){
+    } catch(e) {
+        listEl.innerHTML = '<li class="error">Xatolik yuz berdi</li>';
         console.error(e);
     }
-}
-
-async function fetchTop10(){
-    try{
-        const res = await fetch(`${API_URL}/leaderboard/top10`);
-        if(!res.ok) return [];
-        return await res.json();
-    }catch(e){ console.error(e); return []; }
-}
+};
 
 /* ================= GAME OVER ================= */
 async function gameOver(){
     isGameOver=true;
-    await sendScoreToLeaderboard(score);
 
-    // Telegram MainButton
+    if(tgUser){
+        const payload = {
+            telegram_id: tgUser.id,
+            username: tgUser.username || tgUser.first_name,
+            photo_url: tgUser.photo_url || '',
+            score: score
+        };
+
+        try {
+            await fetch(`${API_URL}/score`, {
+                method:'POST',
+                headers:{ 'Content-Type':'application/json' },
+                body: JSON.stringify(payload)
+            });
+        } catch(e){ console.error(e); }
+    }
+
     if(tg){
         tg.MainButton.setText(`Natija: ${score}`);
         tg.MainButton.show();
         tg.MainButton.onClick(()=>location.reload());
-    }else{
+    } else {
         alert(`O'yin tugadi! Natija: ${score}`);
         location.reload();
     }
@@ -234,17 +243,4 @@ window.startGameLoop = function(){
     score=0; lives=3; combo=0; items=[]; isGameOver=false; lastTime=0; lastSpawn=0;
     if(tg) tg.MainButton.hide();
     requestAnimationFrame(update);
-};
-
-/* ================= REYTING (OPTIONAL) ================= */
-window.showTop10 = async function(containerId){
-    const listEl = document.getElementById(containerId);
-    if(!listEl) return;
-    listEl.innerHTML='';
-    const data = await fetchTop10();
-    data.forEach((u,i)=>{
-        const li = document.createElement('li');
-        li.innerHTML=`${i+1}. <img src="${u.photo||''}" style="width:25px;height:25px;border-radius:50%;margin-right:8px;"> ${u.username||u.name} - ${u.score} ochko`;
-        listEl.appendChild(li);
-    });
 };
