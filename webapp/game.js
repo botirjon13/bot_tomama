@@ -182,7 +182,7 @@ canvas.addEventListener('mousemove', moveBasket);
 
 /* ================= API URL ================= */
 // BACKEND URL - Endi app.py ishlayotgan domen
-const API_URL = 'https://bot-telegram-production-d731.up.railway.app/game';
+const API_URL = 'https://bot-telegram-production-d731.up.railway.app';
 
 /* ================= LEADERBOARD ================= */
 window.loadLeaderboard = async function() {
