@@ -40,17 +40,17 @@ function imageLoaded() {
     }
 }
 
-assets.basket = new Image();
-assets.basket.src = 'assets/basket.png'; 
+assaets.basket = new Image();
+assaets.basket.src = 'assaets/basket.png'; 
 assets.basket.onload = imageLoaded;
 
-assets.myBrand = new Image();
-assets.myBrand.src = 'assets/products/tomato.png'; 
-assets.myBrand.onload = imageLoaded;
+assaets.myBrand = new Image();
+assaets.myBrand.src = 'assaets/products/tomato.png'; 
+assaets.myBrand.onload = imageLoaded;
 
-assets.otherBrand = new Image();
-assets.otherBrand.src = 'assets/products/other_tomato.png'; 
-assets.otherBrand.onload = imageLoaded;
+assaets.otherBrand = new Image();
+assaets.otherBrand.src = 'assaets/products/other_tomato.png'; 
+assaets.otherBrand.onload = imageLoaded;
 
 // Effektlar funksiyalari
 function triggerHaptic(type) {
