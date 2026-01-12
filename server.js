@@ -80,7 +80,7 @@ app.get("/top10", async (req, res) => {
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 app.use(express.static(__dirname));
-app.use('/assaets', express.static(path.join(__dirname, 'assaets'))));
+app.use('/assaets', express.static(path.join(__dirname, 'assaets')));
 
 // Start server
 async function startServer() {
