@@ -8,11 +8,11 @@ let highScore = localStorage.getItem('highScore') || 0;
 let totalDiamonds = parseInt(localStorage.getItem('totalDiamonds')) || 0;
 
 let assets = {};
-let imagesToLoad = 4; 
+let imagesToLoad = 5; // basket, tomato, brand, snow, bomb
 let loadedCount = 0;
 let assetsLoaded = false;
 
-//const tg = window.Telegram?.WebApp;
+const tg = window.Telegram?.WebApp;
 
 function imageLoaded() {
     loadedCount++;
@@ -21,18 +21,23 @@ function imageLoaded() {
 
 const path = 'assaets/';
 
-// Rasmlarni yuklash (Xatoliklarni oldini olish uchun onerror qo'shildi)
+// Rasmlarni yuklash funksiyasi
 const loadAsset = (key, src) => {
     assets[key] = new Image();
     assets[key].src = path + src;
     assets[key].onload = imageLoaded;
-    assets[key].onerror = () => { console.log(key + " yuklanmadi"); imageLoaded(); };
+    assets[key].onerror = () => {
+        console.error(key + " yuklanmadi: " + src);
+        imageLoaded();
+    };
 };
 
+// ASSETS (Fayl yo'llari siz aytgandek sozlangan)
 loadAsset('basket', 'basket.png');
 loadAsset('tomato', 'products/tomatoFon.png');
 loadAsset('brand', 'products/tomato.png');
 loadAsset('snow', 'products/snow.png');
+loadAsset('bomb', 'products/bomb.png'); // Siz yuklagan joy
 
 let basket = { x: canvas.width / 2 - 60, y: canvas.height - 160, width: 120, height: 85 };
 let items = [];
@@ -40,32 +45,33 @@ let score = 0, currentDiamonds = 0, lives = 3, combo = 0;
 let isGameOver = false;
 let spawnInterval = null;
 let slowModeTimer = 0, shakeTimer = 0;
-let gameSpeed = 6;
+let gameSpeed = 7; // 2026-yil adrenalin darajasi
 
 function spawnItem() {
     if (isGameOver) return;
 
     let rand = Math.random();
     let type = 'tomato';
+    // Ehtimolliklar balansi
     if (rand < 0.15) type = 'bomb';
     else if (rand < 0.25) type = 'brand';
     else if (rand < 0.32) type = 'snow';
 
     items.push({
         x: Math.random() * (canvas.width - 65),
-        y: -70,
+        y: -80,
         width: 65,
         height: 65,
         type: type,
-        speedMod: 0.8 + Math.random() * 0.7,
-        drift: (Math.random() - 0.5) * 2.5 // Shamol effekti kuchaytirildi
+        speedMod: 0.9 + Math.random() * 0.8, // Har birining tezligi har xil
+        drift: (Math.random() - 0.5) * 3 // Shamol effekti
     });
 }
 
 function update() {
     if (isGameOver) return;
 
-    // Ekran titrashi
+    // Ekran titrashi (Shake Effect)
     let sx = 0, sy = 0;
     if (shakeTimer > 0) {
         sx = (Math.random() - 0.5) * 20;
@@ -77,11 +83,12 @@ function update() {
     ctx.translate(sx, sy);
     ctx.clearRect(-50, -50, canvas.width + 100, canvas.height + 100);
 
-    let currentGlobalSpeed = (gameSpeed + (score / 250)) * (slowModeTimer > 0 ? 0.5 : 1);
+    // Dinamik tezlik (Ochko oshgan sari qiyinlashadi)
+    let currentGlobalSpeed = (gameSpeed + (score / 200)) * (slowModeTimer > 0 ? 0.5 : 1);
 
     if (slowModeTimer > 0) {
         slowModeTimer--;
-        ctx.fillStyle = "rgba(135, 206, 250, 0.2)";
+        ctx.fillStyle = "rgba(135, 206, 250, 0.2)"; // Muzlash vizualligi
         ctx.fillRect(0, 0, canvas.width, canvas.height);
     }
 
@@ -96,29 +103,28 @@ function update() {
         p.x += p.drift;
 
         // Obyektlarni chizish
-        if (p.type === 'bomb') {
-            ctx.font = "50px Arial";
-            ctx.fillText("💣", p.x + 5, p.y + 45);
-        } else if (assetsLoaded) {
-            let img = p.type === 'brand' ? assets.brand : (p.type === 'snow' ? assets.snow : assets.tomato);
-            ctx.drawImage(img, p.x, p.y, p.width, p.height);
+        if (assetsLoaded) {
+            let img = assets[p.type];
+            if (img && img.complete) {
+                ctx.drawImage(img, p.x, p.y, p.width, p.height);
+            }
         }
 
-        // To'qnashuv mantiqi (Hitbox to'g'rilandi)
-        if (p.y + p.height - 10 >= basket.y && p.y <= basket.y + 40 &&
+        // To'qnashuv (Hitbox optimallashgan)
+        if (p.y + p.height - 15 >= basket.y && p.y <= basket.y + 40 &&
             p.x + p.width - 10 >= basket.x && p.x <= basket.x + basket.width) {
             
             if (p.type === 'bomb') {
                 lives -= 1;
                 combo = 0;
-                shakeTimer = 20;
+                shakeTimer = 25;
                 if (tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('error');
             } else {
                 combo++;
                 if (p.type === 'tomato') score += 10 + (Math.floor(combo / 5) * 5);
                 else if (p.type === 'brand') { score += 100; currentDiamonds += 1; }
-                else if (p.type === 'snow') slowModeTimer = 300;
-                if (tg?.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
+                else if (p.type === 'snow') slowModeTimer = 350;
+                if (tg?.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
             }
 
             items.splice(i, 1); i--;
@@ -126,12 +132,13 @@ function update() {
             continue;
         }
 
-        // Pastga tushib ketish
+        // Pastga tushib ketish (Jon yo'qotish)
         if (p.y > canvas.height) {
             if (p.type === 'tomato' || p.type === 'brand') {
                 lives -= 1;
                 combo = 0;
-                shakeTimer = 10;
+                shakeTimer = 15;
+                if (tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('warning');
             }
             items.splice(i, 1); i--;
             if (lives <= 0) { gameOver(); break; }
@@ -146,7 +153,7 @@ function update() {
 }
 
 function drawUI() {
-    ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
+    ctx.fillStyle = "rgba(0, 0, 0, 0.75)";
     ctx.roundRect(15, 15, 240, 160, 20);
     ctx.fill();
 
@@ -160,16 +167,18 @@ function drawUI() {
 
     if (combo > 2) {
         ctx.fillStyle = '#FFD700';
-        ctx.font = 'italic bold 24px sans-serif';
-        ctx.fillText('🔥 COMBO x' + combo, 30, 153);
+        ctx.font = 'italic bold 26px sans-serif';
+        ctx.fillText('🔥 COMBO x' + combo, 30, 155);
     }
 }
 
 function moveBasket(e) {
     let clientX = e.touches ? e.touches[0].clientX : e.clientX;
-    basket.x = clientX - basket.width / 2;
-    if (basket.x < 0) basket.x = 0;
-    if (basket.x + basket.width > canvas.width) basket.x = canvas.width - basket.width;
+    let targetX = clientX - basket.width / 2;
+    // Chegaralarni tekshirish
+    if (targetX < 0) targetX = 0;
+    if (targetX + basket.width > canvas.width) targetX = canvas.width - basket.width;
+    basket.x = targetX;
 }
 
 canvas.addEventListener('touchmove', (e) => { e.preventDefault(); moveBasket(e); }, { passive: false });
@@ -180,29 +189,35 @@ function gameOver() {
     isGameOver = true;
     clearInterval(spawnInterval);
     
+    // Ma'lumotlarni saqlash
     totalDiamonds += currentDiamonds;
     localStorage.setItem('totalDiamonds', totalDiamonds);
     if (score > highScore) localStorage.setItem('highScore', score);
     
+    // Natija oynasi va menyuga qaytish
     setTimeout(() => {
         if (tg) {
-            tg.MainButton.setText(`Tugadi! 💎 +${currentDiamonds} | Qayta boshlash`);
+            tg.MainButton.setText(`Natija: ${score} 🍅 | Menyu`);
             tg.MainButton.show();
-            tg.MainButton.onClick(() => location.reload());
+            tg.MainButton.onClick(() => {
+                window.location.reload(); // Sahifani yangilab asosiy menyuga qaytaradi
+            });
         } else {
-            alert(`O'yin tugadi!\nBall: ${score}\nAlmaz: ${currentDiamonds}`);
-            location.reload();
+            alert(`O'yin tugadi!\nJami ball: ${score}\nAlmazlar: ${currentDiamonds}`);
+            window.location.reload();
         }
-    }, 100);
+    }, 200);
 }
 
 window.startGameLoop = function() {
+    // O'yinni to'liq reset qilish
     isGameOver = false;
     score = 0; lives = 3; currentDiamonds = 0; combo = 0;
     items = []; slowModeTimer = 0; gameSpeed = 7;
     
     if (spawnInterval) clearInterval(spawnInterval);
-    spawnInterval = setInterval(spawnItem, 700);
+    spawnInterval = setInterval(spawnItem, 650); // Tezkor tushish
     
     requestAnimationFrame(update);
+    if (tg) tg.MainButton.hide();
 };
