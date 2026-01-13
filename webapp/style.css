@@ -1,117 +1,162 @@
-<!DOCTYPE html>
-<html lang="uz">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Tomama O‘yini</title>
-  
-  <!-- Telegram SDK - To'g'ri manzil (Tugmalar ishlashi uchun muhim) -->
-  <script src="telegram.org"></script>
-  
-  <link rel="stylesheet" href="style.css">
-</head>
-<body>
+/* ASOSIY FON - ZAMONAVIY GRADIENT */
+body, html {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: radial-gradient(circle, #ffffff 0%, #f0f0f0 100%);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    touch-action: none;
+    user-select: none;
+}
 
-<!-- FONDA HARAKATLANUVCHI POMIDORLAR -->
-<div class="bg-elements">
-    <img src="assaets/products/tomatoFon.png" class="floating-item item-1">
-    <img src="assaets/products/tomatoFon.png" class="floating-item item-2">
-    <img src="assaets/products/tomatoFon.png" class="floating-item item-3">
-</div>
-  
-  <!-- ASOSIY MENYU OYNASI -->
-  <div id="mainMenu" class="menu-container">
-    <div class="menu-box">
-        <img src="assaets/logo.png" alt="Tomama Logo" class="game-logo">
-        
-        <!-- SHAXSIY REKORD EKRANI -->
-        <div id="recordBox" style="color: #fff; margin-bottom: 20px; background: rgba(0,0,0,0.2); padding: 10px; border-radius: 15px;">
-            <span style="font-size: 14px; opacity: 0.8;">Sizning rekordingiz:</span><br>
-            <strong id="personalBest" style="font-size: 24px; color: #ffd700;">0</strong>
-        </div>
+/* YASHIRISH KLASSI */
+.hidden {
+    display: none !important;
+}
 
-        <button onclick="startGame()">▶️ O'yinni boshlash</button>
-        <button onclick="showRanking()">🏆 Reyting (Top-10)</button>
-        <button onclick="showCoupons()">🎫 Kuponlarim</button>
-    </div>
-  </div>
+/* MENYU KONTEYNERI */
+.menu-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: rgba(0, 0, 0, 0.65); 
+    backdrop-filter: blur(10px);
+    z-index: 100; /* Menyu doim o'yin maydonidan (50) ustun turishi kerak */
+}
 
-  <!-- REYTING OYNASI -->
-  <div id="rankingMenu" class="menu-container hidden">
-    <div class="menu-box">
-        <h2>🏆 Reyting (Top-10)</h2>
-        <ul id="rankingList">
-            <li>1. Sardorbek - 1500 ochko</li>
-            <li>2. Ali - 1200 ochko</li>
-            <li>3. User3 - 800 ochko</li>
-        </ul>
-        <button onclick="hideRanking()" class="back-btn">⬅️ Ortga</button>
-    </div>
-  </div>
+/* MENYU BOX - GLASSMORPHISM */
+.menu-box {
+    text-align: center;
+    padding: 35px 25px;
+    background: rgba(255, 255, 255, 0.12);
+    backdrop-filter: blur(20px);
+    border-radius: 35px;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+    width: 85%;
+    max-width: 380px;
+}
 
-  <!-- KUPONLAR OYNASI -->
-  <div id="couponsMenu" class="menu-container hidden">
-    <div class="menu-box">
-        <h2>🎫 Kuponlarim</h2>
-        <ul id="couponList">
-            <li class="active">Kuponlar hozircha yo'q</li>
-        </ul>
-        <button onclick="hideCoupons()" class="back-btn">⬅️ Ortga</button>
-    </div>
-  </div>
+/* TUGMALAR - PREMIUM STYLE */
+.menu-box button {
+    display: block;
+    width: 100%;
+    padding: 16px;
+    margin-bottom: 15px;
+    font-size: 17px;
+    font-weight: bold;
+    color: #b30000;
+    background: #ffffff;
+    border: none;
+    border-radius: 50px;
+    cursor: pointer;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.25);
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    text-transform: uppercase;
+}
 
+.menu-box button:active {
+    transform: scale(0.94);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+}
 
-  <!-- O'YIN MAYDONI (CANVAS) -->
-  <canvas id="gameCanvas" class="hidden"></canvas>
+/* O'yinni boshlash tugmasi */
+.menu-box button:first-of-type {
+    background: linear-gradient(135deg, #ffd700 0%, #ffb900 100%);
+    color: #222;
+    font-size: 19px;
+    border: 1px solid rgba(255,255,255,0.4);
+}
 
-  <script>
-    // Telegram WebApp ni ishga tushirish
-    const tg = window.Telegram?.WebApp;
-    if (tg) {
-        tg.ready();
-        tg.expand();
-    }
+/* O'YIN MAYDONI (CANVAS) */
+#gameCanvas {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 50; /* Menyu (100) dan pastda, fondan (1) balandda */
+    background: linear-gradient(to bottom, #87CEEB 0%, #E0F7FA 100%);
+}
 
-    // Sahifa yuklanganda saqlangan rekordni chiqarish
-    window.addEventListener('load', () => {
-        const highScore = localStorage.getItem('highScore') || 0;
-        document.getElementById('personalBest').innerText = highScore;
-    });
+/* FON ELEMENTLARI */
+.bg-elements {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1; 
+    overflow: hidden;
+    pointer-events: none; /* BU JUDA MUHIM: Tugmalarni bosishni to'sib qo'ymaydi */
+}
 
-    // --- MENYU FUNKSIYALARI ---
-    function startGame() {
-        document.getElementById('mainMenu').classList.add('hidden');
-        document.getElementById('gameCanvas').classList.remove('hidden');
-        
-        // game.js yuklanganini tekshirib keyin ishga tushiramiz
-        if (window.startGameLoop) {
-            window.startGameLoop(); 
-        }
-    }
+.floating-item {
+    position: absolute;
+    width: 70px;
+    opacity: 0.25;
+    animation: rotateAndMove 15s linear infinite;
+    filter: drop-shadow(0 10px 10px rgba(0,0,0,0.1));
+}
 
-    function showRanking() {
-        document.getElementById('mainMenu').classList.add('hidden');
-        document.getElementById('rankingMenu').classList.remove('hidden');
-    }
+.game-logo {
+    width: 180px;
+    height: auto;
+    margin-bottom: 20px;
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+    filter: drop-shadow(0 8px 15px rgba(0,0,0,0.2));
+}
 
-    function hideRanking() {
-        document.getElementById('mainMenu').classList.remove('hidden');
-        document.getElementById('rankingMenu').classList.add('hidden');
-    }
-    
-    function showCoupons() {
-        document.getElementById('mainMenu').classList.add('hidden');
-        document.getElementById('couponsMenu').classList.remove('hidden');
-    }
+/* RO'YXATLAR - REYTING VA KUPONLAR */
+#rankingList, #couponList {
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 20px;
+    padding: 10px;
+    max-height: 250px;
+    overflow-y: auto;
+    margin-bottom: 15px;
+}
 
-    function hideCoupons() {
-        document.getElementById('mainMenu').classList.remove('hidden');
-        document.getElementById('couponsMenu').classList.add('hidden');
-    }
-  </script>
+#rankingList li, #couponList li {
+    padding: 14px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    color: #fff;
+    font-size: 15px;
+    display: flex;
+    justify-content: space-between;
+}
 
-  <!-- O'yin kodi -->
-  <script src="game.js"></script>
+.active { color: #4ade80 !important; font-weight: bold; }
+.used { color: #ffa3a3 !important; text-decoration: line-through; opacity: 0.6; }
 
-</body>
-</html>
+/* ORTGA TUGMASI */
+.back-btn {
+    background: rgba(255, 255, 255, 0.15) !important;
+    color: #fff !important;
+    box-shadow: none !important;
+    border: 1px solid rgba(255,255,255,0.2) !important;
+}
+
+/* ANIMATSIYA */
+@keyframes rotateAndMove {
+    0% { transform: rotate(0deg) translateY(0px) translateX(0px); }
+    33% { transform: rotate(120deg) translateY(50px) translateX(25px); }
+    66% { transform: rotate(240deg) translateY(-30px) translateX(45px); }
+    100% { transform: rotate(360deg) translateY(0px) translateX(0px); }
+}
+
+/* Scrollbar dizayni */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 10px; }
