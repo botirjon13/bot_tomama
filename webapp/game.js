@@ -214,7 +214,7 @@ function gameOver() {
     const user = window.Telegram?.WebApp?.initDataUnsafe?.user;
     
     // URL MANZILIGA 'https://' VA OXIRIGA '/save' QO'SHILDI
-    fetch('oyinbackent-production.up.railway.app', { 
+    fetch('https://oyinbackent-production.up.railway.app/save', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
