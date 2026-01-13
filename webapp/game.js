@@ -12,7 +12,7 @@ let imagesToLoad = 4;
 let loadedCount = 0;
 let assetsLoaded = false;
 
-const tg = window.Telegram?.WebApp;
+//const tg = window.Telegram?.WebApp;
 
 function imageLoaded() {
     loadedCount++;
