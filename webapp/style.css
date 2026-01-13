@@ -1,140 +1,117 @@
-/* ===== ASOSIY ===== */
-body, html {
-    margin: 0;
-    width: 100%;
-    height: 100%;
-    overflow: hidden;
-    background: radial-gradient(circle, #ffffff 0%, #f0f0f0 100%);
-    font-family: 'Segoe UI', Roboto, Arial, sans-serif;
-    touch-action: none;
-    user-select: none;
-}
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Tomama O‘yini</title>
+  
+  <!-- Telegram SDK - To'g'ri manzil (Tugmalar ishlashi uchun muhim) -->
+  <script src="telegram.org"></script>
+  
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
 
-.hidden { display: none !important; }
+<!-- FONDA HARAKATLANUVCHI POMIDORLAR -->
+<div class="bg-elements">
+    <img src="assaets/products/tomatoFon.png" class="floating-item item-1">
+    <img src="assaets/products/tomatoFon.png" class="floating-item item-2">
+    <img src="assaets/products/tomatoFon.png" class="floating-item item-3">
+</div>
+  
+  <!-- ASOSIY MENYU OYNASI -->
+  <div id="mainMenu" class="menu-container">
+    <div class="menu-box">
+        <img src="assaets/logo.png" alt="Tomama Logo" class="game-logo">
+        
+        <!-- SHAXSIY REKORD EKRANI -->
+        <div id="recordBox" style="color: #fff; margin-bottom: 20px; background: rgba(0,0,0,0.2); padding: 10px; border-radius: 15px;">
+            <span style="font-size: 14px; opacity: 0.8;">Sizning rekordingiz:</span><br>
+            <strong id="personalBest" style="font-size: 24px; color: #ffd700;">0</strong>
+        </div>
 
-/* ===== MENU ===== */
-.menu-container {
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.65);
-    backdrop-filter: blur(10px);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 100;
-}
+        <button onclick="startGame()">▶️ O'yinni boshlash</button>
+        <button onclick="showRanking()">🏆 Reyting (Top-10)</button>
+        <button onclick="showCoupons()">🎫 Kuponlarim</button>
+    </div>
+  </div>
 
-.menu-box {
-    width: 85%;
-    max-width: 380px;
-    padding: 30px 25px;
-    border-radius: 35px;
-    background: rgba(255,255,255,0.12);
-    backdrop-filter: blur(20px);
-    border: 1px solid rgba(255,255,255,0.25);
-    box-shadow: 0 25px 50px rgba(0,0,0,0.5);
-    text-align: center;
-}
+  <!-- REYTING OYNASI -->
+  <div id="rankingMenu" class="menu-container hidden">
+    <div class="menu-box">
+        <h2>🏆 Reyting (Top-10)</h2>
+        <ul id="rankingList">
+            <li>1. Sardorbek - 1500 ochko</li>
+            <li>2. Ali - 1200 ochko</li>
+            <li>3. User3 - 800 ochko</li>
+        </ul>
+        <button onclick="hideRanking()" class="back-btn">⬅️ Ortga</button>
+    </div>
+  </div>
 
-/* ===== LOGO ===== */
-.game-logo {
-    width: 180px;
-    margin-bottom: 20px;
-}
+  <!-- KUPONLAR OYNASI -->
+  <div id="couponsMenu" class="menu-container hidden">
+    <div class="menu-box">
+        <h2>🎫 Kuponlarim</h2>
+        <ul id="couponList">
+            <li class="active">Kuponlar hozircha yo'q</li>
+        </ul>
+        <button onclick="hideCoupons()" class="back-btn">⬅️ Ortga</button>
+    </div>
+  </div>
 
-/* ===== RECORD ===== */
-#recordBox {
-    color: #fff;
-    margin-bottom: 20px;
-    background: rgba(0,0,0,0.25);
-    padding: 10px;
-    border-radius: 15px;
-}
-#recordBox strong {
-    font-size: 26px;
-    color: #ffd700;
-}
 
-/* ===== BUTTONS ===== */
-.menu-box button {
-    width: 100%;
-    padding: 15px;
-    margin-bottom: 14px;
-    font-weight: bold;
-    font-size: 16px;
-    border: none;
-    border-radius: 50px;
-    cursor: pointer;
-    background: #fff;
-    box-shadow: 0 8px 20px rgba(0,0,0,0.25);
-}
-.menu-box button:first-of-type {
-    background: linear-gradient(135deg, #ffd700, #ffb900);
-}
+  <!-- O'YIN MAYDONI (CANVAS) -->
+  <canvas id="gameCanvas" class="hidden"></canvas>
 
-/* ===== CANVAS ===== */
-#gameCanvas {
-    position: fixed;
-    inset: 0;
-    width: 100vw;
-    height: 100vh;
-    z-index: 50;
-    background: linear-gradient(to bottom, #87CEEB, #E0F7FA);
-}
+  <script>
+    // Telegram WebApp ni ishga tushirish
+    const tg = window.Telegram?.WebApp;
+    if (tg) {
+        tg.ready();
+        tg.expand();
+    }
 
-/* ===== RANKING LIST ===== */
-#rankingList {
-    background: rgba(255,255,255,0.08);
-    border-radius: 20px;
-    padding: 10px;
-    max-height: 260px;
-    overflow-y: auto;
-}
+    // Sahifa yuklanganda saqlangan rekordni chiqarish
+    window.addEventListener('load', () => {
+        const highScore = localStorage.getItem('highScore') || 0;
+        document.getElementById('personalBest').innerText = highScore;
+    });
 
-#rankingList li {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 12px;
-    color: #fff;
-    font-size: 15px;
-    border-bottom: 1px solid rgba(255,255,255,0.05);
-}
+    // --- MENYU FUNKSIYALARI ---
+    function startGame() {
+        document.getElementById('mainMenu').classList.add('hidden');
+        document.getElementById('gameCanvas').classList.remove('hidden');
+        
+        // game.js yuklanganini tekshirib keyin ishga tushiramiz
+        if (window.startGameLoop) {
+            window.startGameLoop(); 
+        }
+    }
 
-/* 👤 AVATAR */
-.rank-user {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-.rank-user img {
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    object-fit: cover;
-}
+    function showRanking() {
+        document.getElementById('mainMenu').classList.add('hidden');
+        document.getElementById('rankingMenu').classList.remove('hidden');
+    }
 
-/* ===== BACK BUTTON ===== */
-.back-btn {
-    background: rgba(255,255,255,0.15) !important;
-    color: #fff !important;
-    border: 1px solid rgba(255,255,255,0.2) !important;
-}
+    function hideRanking() {
+        document.getElementById('mainMenu').classList.remove('hidden');
+        document.getElementById('rankingMenu').classList.add('hidden');
+    }
+    
+    function showCoupons() {
+        document.getElementById('mainMenu').classList.add('hidden');
+        document.getElementById('couponsMenu').classList.remove('hidden');
+    }
 
-/* ===== BACKGROUND FLOAT ===== */
-.bg-elements {
-    position: fixed;
-    inset: 0;
-    pointer-events: none;
-    z-index: 1;
-}
-.floating-item {
-    width: 70px;
-    opacity: 0.25;
-    position: absolute;
-    animation: rotateAndMove 15s linear infinite;
-}
-@keyframes rotateAndMove {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-}
+    function hideCoupons() {
+        document.getElementById('mainMenu').classList.remove('hidden');
+        document.getElementById('couponsMenu').classList.add('hidden');
+    }
+  </script>
+
+  <!-- O'yin kodi -->
+  <script src="game.js"></script>
+
+</body>
+</html>
