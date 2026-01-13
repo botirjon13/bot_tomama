@@ -15,7 +15,7 @@ let loadedCount = 0;
 let assetsLoaded = false;
 
 // Telegram WebApp obyektini tekshirish
-const tg = window.Telegram?.WebApp;
+//const tg = window.Telegram?.WebApp;
 
 function imageLoaded() {
     loadedCount++;
