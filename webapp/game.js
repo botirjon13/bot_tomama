@@ -212,12 +212,14 @@ function gameOver() {
 
     // --- MUHIM: SERVERGA MA'LUMOT YUBORISH QISMI BU YERGA KO'CHIRILDI ---
     const user = window.Telegram?.WebApp?.initDataUnsafe?.user;
-    fetch('oyinbackent-production.up.railway.app', { // <-- URL manzilini to'g'riladim
+    
+    // URL MANZILIGA 'https://' VA OXIRIGA '/save' QO'SHILDI
+    fetch('oyinbackent-production.up.railway.app', { 
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
             name: user?.first_name || "Oyinchi",
-            score: score, // <-- O'yin tugagan paytdagi real ball
+            score: score, 
             userId: user?.id || "guest_" + Math.random()
         })
     })
@@ -248,9 +250,6 @@ function gameOver() {
         }
     }, 200);
 }
-
-// FAYL OXIRIDAGI KERAKSIZ FETCH SO'ROVINI BUTUNLAY O'CHIRIB TASHLANG!
-
 
 window.startGameLoop = function() {
     // O'yinni to'liq reset qilish
