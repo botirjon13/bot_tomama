@@ -27,7 +27,9 @@
 
       <div id="recordBox">
           <span>Sizning rekordingiz</span><br>
-          <strong id="personalBest">0</strong>
+          <strong id="personalBest">0</strong><br>
+          <!-- YANGI: Almazlarni ko'rsatish (dizaynga mos) -->
+          <span style="color: #00f2ff; font-size: 0.9em;">💎 Almazlar: <strong id="totalDiamonds">0</strong></span>
       </div>
 
       <button onclick="startGame()">▶️ O'yinni boshlash</button>
@@ -76,16 +78,18 @@ if (tg) {
     tg.expand();
 }
 
-/* ================= PERSONAL BEST ================= */
+/* ================= PERSONAL BEST & DIAMONDS ================= */
 window.addEventListener('load', () => {
-    document.getElementById('personalBest').innerText =
-        localStorage.getItem('highScore') || 0;
+    // Sahifa yuklanganda rekord va almazlarni yangilash
+    document.getElementById('personalBest').innerText = localStorage.getItem('highScore') || 0;
+    document.getElementById('totalDiamonds').innerText = localStorage.getItem('totalDiamonds') || 0;
 });
 
 /* ================= MENU FUNCTIONS ================= */
 function startGame() {
     mainMenu.classList.add('hidden');
     gameCanvas.classList.remove('hidden');
+    // JS mantiqidagi funksiyani chaqirish
     if (window.startGameLoop) window.startGameLoop();
 }
 
