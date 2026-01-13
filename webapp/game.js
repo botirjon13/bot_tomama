@@ -12,7 +12,7 @@ let imagesToLoad = 5; // basket, tomato, brand, snow, bomb
 let loadedCount = 0;
 let assetsLoaded = false;
 
-const tg = window.Telegram?.WebApp;
+//const tg = window.Telegram?.WebApp;
 
 function imageLoaded() {
     loadedCount++;
