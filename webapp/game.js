@@ -102,6 +102,20 @@ function update() {
         p.y += currentGlobalSpeed * p.speedMod;
         p.x += p.drift;
 
+                // Shamol effekti (Drift)
+        p.x += p.drift;
+
+        // DEVORDAN QAYTISH (Yangi qism)
+        // Agar pomidor chap devorga tegsa yoki o'ng devordan chiqib ketmoqchi bo'lsa
+        if (p.x <= 0) {
+            p.x = 0;
+            p.drift = Math.abs(p.drift); // O'ngga qaytaradi
+        } else if (p.x + p.width >= canvas.width) {
+            p.x = canvas.width - p.width;
+            p.drift = -Math.abs(p.drift); // Chapga qaytaradi
+        }
+
+
         // Obyektlarni chizish
         if (assetsLoaded) {
             let img = assets[p.type];
