@@ -1,120 +1,98 @@
 <!DOCTYPE html>
 <html lang="uz">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport"
-        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Tomama O‘yini</title>
-
-  <!-- ✅ TO‘G‘RI TELEGRAM SDK -->
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
-
-  <link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Tomama 2026</title>
+    <script src="telegram.org"></script>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<!-- FONDA HARAKATLANUVCHI POMIDORLAR -->
 <div class="bg-elements">
-    <img src="assaets/products/tomatoFon.png" class="floating-item item-1">
-    <img src="assaets/products/tomatoFon.png" class="floating-item item-2">
-    <img src="assaets/products/tomatoFon.png" class="floating-item item-3">
+    <img src="assaets/products/tomatoFon.png" class="floating-item" style="top:10%; left:10%;">
+    <img src="assaets/products/tomatoFon.png" class="floating-item" style="top:40%; right:15%;">
+    <img src="assaets/products/tomatoFon.png" class="floating-item" style="bottom:15%; left:20%;">
 </div>
 
-<!-- ================= MAIN MENU ================= -->
+<!-- MAIN MENU -->
 <div id="mainMenu" class="menu-container">
-  <div class="menu-box">
-      <img src="assaets/logo.png" class="game-logo" alt="Tomama Logo">
-
-      <div id="recordBox">
-          <span>Sizning rekordingiz</span><br>
-          <strong id="personalBest">0</strong><br>
-          <!-- YANGI: Almazlarni ko'rsatish (dizaynga mos) -->
-          <span style="color: #00f2ff; font-size: 0.9em;">💎 Almazlar: <strong id="totalDiamonds">0</strong></span>
-      </div>
-
-      <button onclick="startGame()">▶️ O'yinni boshlash</button>
-      <button onclick="showRanking()">🏆 Reyting (Top-10)</button>
-      <button onclick="showCoupons()">🎫 Kuponlarim</button>
-  </div>
+    <div class="menu-box">
+        <img src="assaets/logo.png" class="game-logo" alt="Tomama Logo">
+        <div id="recordBox">
+            <span style="opacity: 0.7; font-size: 0.8em;">ENG YAXSHI NATIJA</span><br>
+            <strong id="personalBest">0</strong><br>
+            <span style="color: #00f2ff; font-weight: bold; font-size: 1.1em;">💎 <span id="totalDiamonds">0</span></span>
+        </div>
+        <button onclick="startGame()">▶️ O'yinni boshlash</button>
+        <button onclick="showRanking()">🏆 Reyting</button>
+        <button onclick="showCoupons()">🎫 Kuponlar</button>
+    </div>
 </div>
 
-<!-- ================= RANKING ================= -->
+<!-- RANKING -->
 <div id="rankingMenu" class="menu-container hidden">
-  <div class="menu-box">
-      <h2>🏆 Top-10 Reyting</h2>
-      <ul id="rankingList">
-          <li class="loading">Yuklanmoqda...</li>
-      </ul>
-      <button class="back-btn" onclick="hideRanking()">⬅️ Ortga</button>
-  </div>
+    <div class="menu-box">
+        <h2 style="color: white; margin-top: 0;">🏆 Reyting</h2>
+        <div id="rankingList" style="color: white; min-height: 100px;">Yuklanmoqda...</div>
+        <button onclick="hideAllMenus()">⬅️ Ortga</button>
+    </div>
 </div>
 
-<!-- ================= COUPONS ================= -->
+<!-- COUPONS -->
 <div id="couponsMenu" class="menu-container hidden">
-  <div class="menu-box">
-      <h2>🎫 Kuponlarim</h2>
-      <ul id="couponList">
-          <li class="active">Hozircha kuponlar yo‘q</li>
-      </ul>
-      <button class="back-btn" onclick="hideCoupons()">⬅️ Ortga</button>
-  </div>
+    <div class="menu-box">
+        <h2 style="color: white; margin-top: 0;">🎫 Kuponlar</h2>
+        <div id="couponList" style="color: white;">Hozircha kuponlar yo'q</div>
+        <button onclick="hideAllMenus()">⬅️ Ortga</button>
+    </div>
 </div>
 
-<!-- ================= GAME CANVAS ================= -->
 <canvas id="gameCanvas" class="hidden"></canvas>
 
 <script>
-/* ================= DOM ELEMENTS ================= */
-const mainMenu = document.getElementById('mainMenu');
-const rankingMenu = document.getElementById('rankingMenu');
-const couponsMenu = document.getElementById('couponsMenu');
-const gameCanvas = document.getElementById('gameCanvas');
+    const tg = window.Telegram?.WebApp;
+    if (tg) {
+        tg.ready();
+        tg.expand();
+        tg.setHeaderColor('#81d4fa');
+        // Telegram BackButton integratsiyasi
+        tg.BackButton.onClick(() => hideAllMenus());
+    }
 
-/* ================= TELEGRAM INIT ================= */
-const tg = window.Telegram?.WebApp;
-const tgUser = tg?.initDataUnsafe?.user || null;
-if (tg) {
-    tg.ready();
-    tg.expand();
-}
+    function updateUIStats() {
+        document.getElementById('personalBest').innerText = localStorage.getItem('highScore') || 0;
+        document.getElementById('totalDiamonds').innerText = localStorage.getItem('totalDiamonds') || 0;
+    }
 
-/* ================= PERSONAL BEST & DIAMONDS ================= */
-window.addEventListener('load', () => {
-    // Sahifa yuklanganda rekord va almazlarni yangilash
-    document.getElementById('personalBest').innerText = localStorage.getItem('highScore') || 0;
-    document.getElementById('totalDiamonds').innerText = localStorage.getItem('totalDiamonds') || 0;
-});
+    window.addEventListener('load', updateUIStats);
 
-/* ================= MENU FUNCTIONS ================= */
-function startGame() {
-    mainMenu.classList.add('hidden');
-    gameCanvas.classList.remove('hidden');
-    // JS mantiqidagi funksiyani chaqirish
-    if (window.startGameLoop) window.startGameLoop();
-}
+    function startGame() {
+        tg?.HapticFeedback.impactOccurred('medium');
+        document.getElementById('mainMenu').classList.add('hidden');
+        document.getElementById('gameCanvas').classList.remove('hidden');
+        if (window.startGameLoop) window.startGameLoop();
+    }
 
-function showRanking() {
-    mainMenu.classList.add('hidden');
-    rankingMenu.classList.remove('hidden');
-    if (window.loadLeaderboard) window.loadLeaderboard();
-}
+    function showRanking() {
+        tg?.BackButton.show();
+        document.getElementById('mainMenu').classList.add('hidden');
+        document.getElementById('rankingMenu').classList.remove('hidden');
+    }
 
-function hideRanking() {
-    rankingMenu.classList.add('hidden');
-    mainMenu.classList.remove('hidden');
-}
+    function showCoupons() {
+        tg?.BackButton.show();
+        document.getElementById('mainMenu').classList.add('hidden');
+        document.getElementById('couponsMenu').classList.remove('hidden');
+    }
 
-function showCoupons() {
-    mainMenu.classList.add('hidden');
-    couponsMenu.classList.remove('hidden');
-}
-
-function hideCoupons() {
-    couponsMenu.classList.add('hidden');
-    mainMenu.classList.remove('hidden');
-}
+    function hideAllMenus() {
+        tg?.BackButton.hide();
+        document.querySelectorAll('.menu-container').forEach(m => m.classList.add('hidden'));
+        document.getElementById('mainMenu').classList.remove('hidden');
+        updateUIStats();
+    }
 </script>
-
 <script src="game.js"></script>
 </body>
 </html>
