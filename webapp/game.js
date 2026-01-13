@@ -14,7 +14,7 @@ let loadedCount = 0;
 let assetsLoaded = false;
 
 // Telegram Haptic
-const tg = window.Telegram?.WebApp;
+//const tg = window.Telegram?.WebApp;
 
 function imageLoaded() {
     loadedCount++;
