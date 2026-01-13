@@ -8,72 +8,71 @@ let highScore = localStorage.getItem('highScore') || 0;
 let totalDiamonds = parseInt(localStorage.getItem('totalDiamonds')) || 0;
 
 let assets = {};
-let imagesToLoad = 4; // basket, tomato, brand, snow
+let imagesToLoad = 4; 
 let loadedCount = 0;
 let assetsLoaded = false;
 
 function imageLoaded() {
     loadedCount++;
-    if (loadedCount === imagesToLoad) {
-        assetsLoaded = true;
-        console.log("Barcha rasmlar tayyor!");
-    }
+    if (loadedCount === imagesToLoad) assetsLoaded = true;
 }
 
 const path = 'assaets/';
 
-// Rasmlarni yuklash
 assets.basket = new Image();
 assets.basket.src = path + 'basket.png';
 assets.basket.onload = imageLoaded;
 
 assets.tomato = new Image();
-assets.tomato.src = path + 'products/tomatoFon.png'; // Oddiy pomidor
+assets.tomato.src = path + 'products/tomatoFon.png'; 
 assets.tomato.onload = imageLoaded;
 
 assets.brand = new Image();
-assets.brand.src = path + 'products/tomato.png'; // Brend banka
+assets.brand.src = path + 'products/tomato.png'; 
 assets.brand.onload = imageLoaded;
 
 assets.snow = new Image();
-assets.snow.src = path + 'products/snow.png'; // Qor parchasi (assaets/products/snow.png bo'lishi kerak)
+assets.snow.src = path + 'products/snow.png';
 assets.snow.onload = imageLoaded;
-assets.snow.onerror = () => { console.log("Qor rasmi topilmadi, vaqtinchalik rang ishlatiladi"); imageLoaded(); };
+assets.snow.onerror = () => imageLoaded(); 
 
 let basket = { x: canvas.width / 2 - 60, y: canvas.height - 160, width: 120, height: 85 };
 let items = [];
 let score = 0;
 let currentDiamonds = 0;
 let lives = 3;
-let speed = 4;
+let baseSpeed = 5; // Boshlang'ich tezlik yuqoriroq
+let combo = 0;
 let isGameOver = false;
 let spawnInterval = null;
-let slowModeTimer = 0; // Sekinlashuv taymeri
+let slowModeTimer = 0;
 
 function spawnItem() {
     if (isGameOver) return;
 
     let rand = Math.random();
-    let type, img, w = 65, h = 65;
+    let type, img;
 
-    if (rand < 0.1) { // 10% Brend banka
-        type = 'brand';
-        img = assets.brand;
-    } else if (rand < 0.2) { // 10% Qor
+    // Ehtimolliklar qayta ko'rib chiqildi:
+    if (rand < 0.05) { // 5% Qor (kamaytirildi)
         type = 'snow';
         img = assets.snow;
-    } else { // 80% Oddiy pomidor
+    } else if (rand < 0.15) { // 10% Brend banka
+        type = 'brand';
+        img = assets.brand;
+    } else { // 85% Oddiy pomidor
         type = 'tomato';
         img = assets.tomato;
     }
 
     items.push({
-        x: Math.random() * (canvas.width - w),
-        y: -h,
-        width: w,
-        height: h,
+        x: Math.random() * (canvas.width - 65),
+        y: -70,
+        width: 65,
+        height: 65,
         type: type,
-        image: img
+        image: img,
+        speedMultiplier: 0.8 + Math.random() * 0.5 // Har bir pomidor har xil tezlikda tushadi
     });
 }
 
@@ -81,29 +80,26 @@ function update() {
     if (isGameOver) return;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // Sekinlashuv mantiqi
-    let currentSpeed = speed;
+    // O'yin davomida tezlik asta-sekin oshib boradi
+    let currentGlobalSpeed = baseSpeed + (score / 200); 
+    
     if (slowModeTimer > 0) {
         slowModeTimer--;
-        currentSpeed = speed * 0.5; // Tezlikni yarmi
-        ctx.fillStyle = "rgba(0, 191, 255, 0.1)"; // Muzlash effekti
+        currentGlobalSpeed *= 0.5; // Muzlatish paytida sekinlashadi
+        ctx.fillStyle = "rgba(135, 206, 250, 0.2)";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
     }
 
-    // Savatni chizish
     if (assetsLoaded) {
         ctx.drawImage(assets.basket, basket.x, basket.y, basket.width, basket.height);
     }
 
     for (let i = 0; i < items.length; i++) {
         let p = items[i];
-        p.y += currentSpeed;
+        p.y += currentGlobalSpeed * p.speedMultiplier;
 
         if (assetsLoaded && p.image) {
             ctx.drawImage(p.image, p.x, p.y, p.width, p.height);
-        } else {
-            ctx.fillStyle = p.type === 'brand' ? 'gold' : (p.type === 'snow' ? 'white' : 'red');
-            ctx.fillRect(p.x, p.y, p.width, p.height);
         }
 
         // To'qnashuv
@@ -111,21 +107,25 @@ function update() {
             p.x + p.width >= basket.x && p.x <= basket.x + basket.width) {
             
             if (p.type === 'tomato') {
-                score += 10;
+                combo++;
+                score += 10 + Math.floor(combo / 5) * 5; // Combo qancha yuqori bo'lsa, ball shuncha ko'p
             } else if (p.type === 'brand') {
+                combo++;
                 score += 100;
                 currentDiamonds += 1;
             } else if (p.type === 'snow') {
-                slowModeTimer = 300; // ~6 soniya sekinlashuv
+                slowModeTimer = 250; 
             }
 
             items.splice(i, 1); i--;
             continue;
         }
 
-        // Pastga tushib ketish
         if (p.y > canvas.height) {
-            if (p.type !== 'snow') lives--; // Faqat qor tushib ketsa jon ketmaydi
+            if (p.type !== 'snow') {
+                lives--;
+                combo = 0; // Pomidor tushib ketsa combo nolga tushadi
+            }
             items.splice(i, 1); i--;
             if (lives <= 0) gameOver();
         }
@@ -136,32 +136,34 @@ function update() {
 }
 
 function drawUI() {
-    ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
-    ctx.roundRect(15, 15, 220, 140, 15);
+    ctx.fillStyle = "rgba(0, 0, 0, 0.6)";
+    ctx.roundRect(15, 15, 230, 160, 20);
     ctx.fill();
 
     ctx.fillStyle = 'white';
-    ctx.font = 'bold 20px Arial';
-    ctx.fillText('🍅 Ball: ' + score, 30, 45);
+    ctx.font = 'bold 20px sans-serif';
+    ctx.fillText('🍅 Ball: ' + score, 30, 50);
+    
     ctx.fillStyle = '#00f2ff';
-    ctx.fillText('💎 Almaz: ' + currentDiamonds, 30, 80);
+    ctx.fillText('💎 Almaz: ' + currentDiamonds, 30, 85);
+    
     ctx.fillStyle = '#ff4d4d';
-    ctx.fillText('❤️ Jon: ' + '❤️'.repeat(Math.max(0, lives)), 30, 115);
+    ctx.fillText('❤️ Jon: ' + '❤️'.repeat(Math.max(0, lives)), 30, 120);
 
-    if (slowModeTimer > 0) {
-        ctx.fillStyle = '#00bfff';
-        ctx.font = 'italic bold 18px Arial';
-        ctx.fillText('❄️ Muzlash: ' + Math.ceil(slowModeTimer/60) + 's', 30, 145);
+    if (combo > 2) {
+        ctx.fillStyle = '#FFD700';
+        ctx.font = 'italic bold 22px sans-serif';
+        ctx.fillText('🔥 Combo x' + combo, 30, 155);
     }
 }
 
-// Savat harakati
 function moveBasket(e) {
     let clientX = e.touches ? e.touches[0].clientX : e.clientX;
     basket.x = clientX - basket.width / 2;
     if (basket.x < 0) basket.x = 0;
     if (basket.x + basket.width > canvas.width) basket.x = canvas.width - basket.width;
 }
+
 canvas.addEventListener('touchmove', (e) => { e.preventDefault(); moveBasket(e); }, { passive: false });
 canvas.addEventListener('mousemove', moveBasket);
 
@@ -172,23 +174,23 @@ function gameOver() {
     localStorage.setItem('totalDiamonds', totalDiamonds);
     if (score > highScore) localStorage.setItem('highScore', score);
     
-    alert(`O'yin tugadi!\nBall: ${score}\nAlmaz: ${currentDiamonds}`);
+    alert(`O'yin tugadi!\nBall: ${score}\nAlmaz: ${currentDiamonds}\nEng baland Combo: ${combo}`);
     location.reload();
 }
 
-// BU FUNKSIYA index.html DAGI TUGMA BILAN BOG'LANGAN
 window.startGameLoop = function() {
-    console.log("O'yin boshlandi...");
     isGameOver = false;
     score = 0;
     lives = 3;
     currentDiamonds = 0;
+    combo = 0;
     items = [];
     slowModeTimer = 0;
-    speed = 4;
+    baseSpeed = 5; 
     
     if(spawnInterval) clearInterval(spawnInterval);
-    spawnInterval = setInterval(spawnItem, 800);
+    // Vaqt o'tishi bilan pomidorlar tezroq tushishni boshlaydi
+    spawnInterval = setInterval(spawnItem, 700); 
     
     requestAnimationFrame(update);
 };
