@@ -1,3 +1,4 @@
+// game.js
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 
@@ -12,13 +13,6 @@ let imagesToLoad = 5; // basket, tomato, brand, snow, bomb
 let loadedCount = 0;
 let assetsLoaded = false;
 
-//const tg = window.Telegram?.WebApp;
-
-function imageLoaded() {
-    loadedCount++;
-    if (loadedCount === imagesToLoad) assetsLoaded = true;
-}
-
 const path = 'assaets/';
 
 // Rasmlarni yuklash funksiyasi
@@ -32,12 +26,17 @@ const loadAsset = (key, src) => {
     };
 };
 
-// ASSETS (Fayl yo'llari siz aytgandek sozlangan)
+function imageLoaded() {
+    loadedCount++;
+    if (loadedCount === imagesToLoad) assetsLoaded = true;
+}
+
+// ASSETS
 loadAsset('basket', 'basket.png');
 loadAsset('tomato', 'products/tomatoFon.png');
 loadAsset('brand', 'products/tomato.png');
 loadAsset('snow', 'products/snow.png');
-loadAsset('bomb', 'products/bomb.png'); // Siz yuklagan joy
+loadAsset('bomb', 'products/bomb.png');
 
 let basket = { x: canvas.width / 2 - 60, y: canvas.height - 160, width: 120, height: 85 };
 let items = [];
@@ -45,14 +44,14 @@ let score = 0, currentDiamonds = 0, lives = 3, combo = 0;
 let isGameOver = false;
 let spawnInterval = null;
 let slowModeTimer = 0, shakeTimer = 0;
-let gameSpeed = 7; // 2026-yil adrenalin darajasi
+let gameSpeed = 7;
 
+// Obyektlarni yaratish
 function spawnItem() {
     if (isGameOver) return;
 
     let rand = Math.random();
     let type = 'tomato';
-    // Ehtimolliklar balansi
     if (rand < 0.15) type = 'bomb';
     else if (rand < 0.25) type = 'brand';
     else if (rand < 0.32) type = 'snow';
@@ -63,15 +62,15 @@ function spawnItem() {
         width: 65,
         height: 65,
         type: type,
-        speedMod: 0.9 + Math.random() * 0.8, // Har birining tezligi har xil
-        drift: (Math.random() - 0.5) * 3 // Shamol effekti
+        speedMod: 0.9 + Math.random() * 0.8,
+        drift: (Math.random() - 0.5) * 3
     });
 }
 
+// O‘yin update
 function update() {
     if (isGameOver) return;
 
-    // Ekran titrashi (Shake Effect)
     let sx = 0, sy = 0;
     if (shakeTimer > 0) {
         sx = (Math.random() - 0.5) * 20;
@@ -83,16 +82,15 @@ function update() {
     ctx.translate(sx, sy);
     ctx.clearRect(-50, -50, canvas.width + 100, canvas.height + 100);
 
-    // Dinamik tezlik (Ochko oshgan sari qiyinlashadi)
     let currentGlobalSpeed = (gameSpeed + (score / 200)) * (slowModeTimer > 0 ? 0.5 : 1);
 
     if (slowModeTimer > 0) {
         slowModeTimer--;
-        ctx.fillStyle = "rgba(135, 206, 250, 0.2)"; // Muzlash vizualligi
+        ctx.fillStyle = "rgba(135, 206, 250, 0.2)";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
     }
 
-    // Savatni chizish
+    // Savat
     if (assetsLoaded && assets.basket.complete) {
         ctx.drawImage(assets.basket, basket.x, basket.y, basket.width, basket.height);
     }
@@ -102,21 +100,14 @@ function update() {
         p.y += currentGlobalSpeed * p.speedMod;
         p.x += p.drift;
 
-                // Shamol effekti (Drift)
-        p.x += p.drift;
-
-        // DEVORDAN QAYTISH (Yangi qism)
-        // Agar pomidor chap devorga tegsa yoki o'ng devordan chiqib ketmoqchi bo'lsa
         if (p.x <= 0) {
             p.x = 0;
-            p.drift = Math.abs(p.drift); // O'ngga qaytaradi
+            p.drift = Math.abs(p.drift);
         } else if (p.x + p.width >= canvas.width) {
             p.x = canvas.width - p.width;
-            p.drift = -Math.abs(p.drift); // Chapga qaytaradi
+            p.drift = -Math.abs(p.drift);
         }
 
-
-        // Obyektlarni chizish
         if (assetsLoaded) {
             let img = assets[p.type];
             if (img && img.complete) {
@@ -124,12 +115,12 @@ function update() {
             }
         }
 
-        // To'qnashuv (Hitbox optimallashgan)
+        // Collision
         if (p.y + p.height - 15 >= basket.y && p.y <= basket.y + 40 &&
             p.x + p.width - 10 >= basket.x && p.x <= basket.x + basket.width) {
-            
+
             if (p.type === 'bomb') {
-                lives -= 1;
+                lives--;
                 combo = 0;
                 shakeTimer = 25;
                 if (tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('error');
@@ -146,10 +137,9 @@ function update() {
             continue;
         }
 
-        // Pastga tushib ketish (Jon yo'qotish)
         if (p.y > canvas.height) {
             if (p.type === 'tomato' || p.type === 'brand') {
-                lives -= 1;
+                lives--;
                 combo = 0;
                 shakeTimer = 15;
                 if (tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('warning');
@@ -166,6 +156,7 @@ function update() {
     }
 }
 
+// UI chizish
 function drawUI() {
     ctx.fillStyle = "rgba(0, 0, 0, 0.75)";
     ctx.roundRect(15, 15, 240, 160, 20);
@@ -186,10 +177,10 @@ function drawUI() {
     }
 }
 
+// Savatni harakatlantirish
 function moveBasket(e) {
     let clientX = e.touches ? e.touches[0].clientX : e.clientX;
     let targetX = clientX - basket.width / 2;
-    // Chegaralarni tekshirish
     if (targetX < 0) targetX = 0;
     if (targetX + basket.width > canvas.width) targetX = canvas.width - basket.width;
     basket.x = targetX;
@@ -198,52 +189,38 @@ function moveBasket(e) {
 canvas.addEventListener('touchmove', (e) => { e.preventDefault(); moveBasket(e); }, { passive: false });
 canvas.addEventListener('mousemove', moveBasket);
 
+// Game over
 function gameOver() {
     if (isGameOver) return;
     isGameOver = true;
-    
-    // 1. Darhol hamma narsani to'xtatish
     clearInterval(spawnInterval);
-    
-    // 2. Telegram tebranishi (Xatolik signali)
-    if (tg && tg.HapticFeedback) {
-        tg.HapticFeedback.notificationOccurred('error');
-    }
 
-    // --- MUHIM: SERVERGA MA'LUMOT YUBORISH QISMI BU YERGA KO'CHIRILDI ---
     const user = window.Telegram?.WebApp?.initDataUnsafe?.user;
-    
-    // URL MANZILIGA 'https://' VA OXIRIGA '/save' QO'SHILDI
+
     fetch('https://oyinbackent-production.up.railway.app/save', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        const user = window.Telegram?.WebApp?.initDataUnsafe?.user;
         body: JSON.stringify({
-            userId: user?.id,
-            name: user?.username ? '@' + user.username : user?.first_name,
+            telegram_id: user?.id,
+            username: user?.username || user?.first_name || "Oyinchi",
             score: score
         })
     })
     .then(() => console.log("Natija serverga saqlandi!"))
     .catch(e => console.error("Server bilan bog'lanishda xato:", e));
-    // ------------------------------------------------------------------
 
-    // 3. Ma'lumotlarni local saqlash
     totalDiamonds += currentDiamonds;
     localStorage.setItem('totalDiamonds', totalDiamonds);
-    if (score > highScore) {
-        localStorage.setItem('highScore', score);
-    }
-    
-    // 4. Natija oynasi (200ms kechikish adrenalin effekti uchun yaxshi)
+    if (score > highScore) localStorage.setItem('highScore', score);
+
     setTimeout(() => {
         if (tg) {
-            tg.MainButton.offClick(); // Eski kliklarni tozalash (MUHIM!)
+            tg.MainButton.offClick();
             tg.MainButton.setText(`NATIJA: ${score} 🍅 | MENYUGA QAYTISH`);
             tg.MainButton.show();
             tg.MainButton.onClick(() => {
                 tg.MainButton.hide();
-                window.location.reload(); 
+                window.location.reload();
             });
         } else {
             alert(`O'yin tugadi!\nJami pomidorlar: ${score}\nTopilgan almazlar: ${currentDiamonds}`);
@@ -252,15 +229,15 @@ function gameOver() {
     }, 200);
 }
 
+// O‘yinni boshlash
 window.startGameLoop = function() {
-    // O'yinni to'liq reset qilish
     isGameOver = false;
     score = 0; lives = 3; currentDiamonds = 0; combo = 0;
     items = []; slowModeTimer = 0; gameSpeed = 7;
-    
+
     if (spawnInterval) clearInterval(spawnInterval);
-    spawnInterval = setInterval(spawnItem, 650); // Tezkor tushish
-    
+    spawnInterval = setInterval(spawnItem, 650);
+
     requestAnimationFrame(update);
     if (tg) tg.MainButton.hide();
 };
