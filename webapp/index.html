@@ -2,26 +2,18 @@
 <html lang="uz">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Tomama - Pomidor Yig'ish</title>
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Tomama O‘yini</title>
+
+  <!-- ✅ TO‘G‘RI TELEGRAM SDK -->
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
   <link rel="stylesheet" href="style.css">
-  <style>
-    /* Bir nechta qo'shimcha stil menyu chiroyli ko'rinishi uchun */
-    #diamondDisplay {
-        color: #00f2ff;
-        font-weight: bold;
-        margin-top: 5px;
-        display: block;
-    }
-    .menu-box {
-        border: 3px solid #ff4d4d; /* Pomidor rangi */
-        background: rgba(255, 255, 255, 0.95);
-    }
-  </style>
 </head>
 <body>
 
+<!-- FONDA HARAKATLANUVCHI POMIDORLAR -->
 <div class="bg-elements">
     <img src="assaets/products/tomatoFon.png" class="floating-item item-1">
     <img src="assaets/products/tomatoFon.png" class="floating-item item-2">
@@ -34,30 +26,34 @@
       <img src="assaets/logo.png" class="game-logo" alt="Tomama Logo">
 
       <div id="recordBox">
-          <span>🏆 Eng yaxshi natija: <strong id="personalBest">0</strong></span><br>
-          <span id="diamondDisplay">💎 Jami almazlar: <strong id="totalDiamonds">0</strong></span>
+          <span>Sizning rekordingiz</span><br>
+          <strong id="personalBest">0</strong>
       </div>
 
-      <button onclick="startGame()" style="background: #ff4d4d;">▶️ O'yinni boshlash</button>
+      <button onclick="startGame()">▶️ O'yinni boshlash</button>
       <button onclick="showRanking()">🏆 Reyting (Top-10)</button>
-      <button onclick="showCoupons()">🎫 Kupon do'koni</button>
+      <button onclick="showCoupons()">🎫 Kuponlarim</button>
   </div>
 </div>
 
-<!-- ================= RANKING & COUPONS (O'zgarmadi) ================= -->
+<!-- ================= RANKING ================= -->
 <div id="rankingMenu" class="menu-container hidden">
   <div class="menu-box">
       <h2>🏆 Top-10 Reyting</h2>
-      <ul id="rankingList"><li class="loading">Yuklanmoqda...</li></ul>
+      <ul id="rankingList">
+          <li class="loading">Yuklanmoqda...</li>
+      </ul>
       <button class="back-btn" onclick="hideRanking()">⬅️ Ortga</button>
   </div>
 </div>
 
+<!-- ================= COUPONS ================= -->
 <div id="couponsMenu" class="menu-container hidden">
   <div class="menu-box">
-      <h2>🎫 Almazlarni almashtirish</h2>
-      <p>Tez kunda: Almazlaringizga haqiqiy pomidorlar oling!</p>
-      <ul id="couponList"></ul>
+      <h2>🎫 Kuponlarim</h2>
+      <ul id="couponList">
+          <li class="active">Hozircha kuponlar yo‘q</li>
+      </ul>
       <button class="back-btn" onclick="hideCoupons()">⬅️ Ortga</button>
   </div>
 </div>
@@ -66,46 +62,51 @@
 <canvas id="gameCanvas" class="hidden"></canvas>
 
 <script>
+/* ================= DOM ELEMENTS ================= */
 const mainMenu = document.getElementById('mainMenu');
+const rankingMenu = document.getElementById('rankingMenu');
+const couponsMenu = document.getElementById('couponsMenu');
 const gameCanvas = document.getElementById('gameCanvas');
 
+/* ================= TELEGRAM INIT ================= */
 const tg = window.Telegram?.WebApp;
-if (tg) { tg.ready(); tg.expand(); }
-
-/* Rekord va Almazlarni yuklash */
-function updateStats() {
-    document.getElementById('personalBest').innerText = localStorage.getItem('highScore') || 0;
-    document.getElementById('totalDiamonds').innerText = localStorage.getItem('totalDiamonds') || 0;
+const tgUser = tg?.initDataUnsafe?.user || null;
+if (tg) {
+    tg.ready();
+    tg.expand();
 }
 
-window.addEventListener('load', updateStats);
+/* ================= PERSONAL BEST ================= */
+window.addEventListener('load', () => {
+    document.getElementById('personalBest').innerText =
+        localStorage.getItem('highScore') || 0;
+});
 
+/* ================= MENU FUNCTIONS ================= */
 function startGame() {
     mainMenu.classList.add('hidden');
     gameCanvas.classList.remove('hidden');
-    // JS mantiqidagi startGameLoop funksiyasini chaqiramiz
-    if (window.startGameLoop) {
-        window.startGameLoop();
-    }
+    if (window.startGameLoop) window.startGameLoop();
 }
 
 function showRanking() {
     mainMenu.classList.add('hidden');
-    document.getElementById('rankingMenu').classList.remove('hidden');
+    rankingMenu.classList.remove('hidden');
+    if (window.loadLeaderboard) window.loadLeaderboard();
 }
 
 function hideRanking() {
-    document.getElementById('rankingMenu').classList.add('hidden');
+    rankingMenu.classList.add('hidden');
     mainMenu.classList.remove('hidden');
 }
 
 function showCoupons() {
     mainMenu.classList.add('hidden');
-    document.getElementById('couponsMenu').classList.remove('hidden');
+    couponsMenu.classList.remove('hidden');
 }
 
 function hideCoupons() {
-    document.getElementById('couponsMenu').classList.add('hidden');
+    couponsMenu.classList.add('hidden');
     mainMenu.classList.remove('hidden');
 }
 </script>
