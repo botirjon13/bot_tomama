@@ -236,6 +236,18 @@ function gameOver() {
     }, 200);
 }
 
+// O'yin tugagach ballni serverga yuborish
+const user = window.Telegram?.WebApp?.initDataUnsafe?.user;
+fetch('sizning-railway-url.app', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+        name: user?.first_name || "Oyinchi",
+        score: score,
+        userId: user?.id || "guest_" + Math.random()
+    })
+});
+
 window.startGameLoop = function() {
     // O'yinni to'liq reset qilish
     isGameOver = false;
