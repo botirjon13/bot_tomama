@@ -210,7 +210,22 @@ function gameOver() {
         tg.HapticFeedback.notificationOccurred('error');
     }
 
-    // 3. Ma'lumotlarni saqlash
+    // --- MUHIM: SERVERGA MA'LUMOT YUBORISH QISMI BU YERGA KO'CHIRILDI ---
+    const user = window.Telegram?.WebApp?.initDataUnsafe?.user;
+    fetch('oyinbackent-production.up.railway.app', { // <-- URL manzilini to'g'riladim
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            name: user?.first_name || "Oyinchi",
+            score: score, // <-- O'yin tugagan paytdagi real ball
+            userId: user?.id || "guest_" + Math.random()
+        })
+    })
+    .then(() => console.log("Natija serverga saqlandi!"))
+    .catch(e => console.error("Server bilan bog'lanishda xato:", e));
+    // ------------------------------------------------------------------
+
+    // 3. Ma'lumotlarni local saqlash
     totalDiamonds += currentDiamonds;
     localStorage.setItem('totalDiamonds', totalDiamonds);
     if (score > highScore) {
@@ -220,7 +235,6 @@ function gameOver() {
     // 4. Natija oynasi (200ms kechikish adrenalin effekti uchun yaxshi)
     setTimeout(() => {
         if (tg) {
-            // MainButtonni tozalash va yangilash
             tg.MainButton.offClick(); // Eski kliklarni tozalash (MUHIM!)
             tg.MainButton.setText(`NATIJA: ${score} 🍅 | MENYUGA QAYTISH`);
             tg.MainButton.show();
@@ -229,24 +243,14 @@ function gameOver() {
                 window.location.reload(); 
             });
         } else {
-            // Agar brauzerda bo'lsa
             alert(`O'yin tugadi!\nJami pomidorlar: ${score}\nTopilgan almazlar: ${currentDiamonds}`);
             window.location.reload();
         }
     }, 200);
 }
 
-// O'yin tugagach ballni serverga yuborish
-const user = window.Telegram?.WebApp?.initDataUnsafe?.user;
-fetch('sizning-railway-url.app', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-        name: user?.first_name || "Oyinchi",
-        score: score,
-        userId: user?.id || "guest_" + Math.random()
-    })
-});
+// FAYL OXIRIDAGI KERAKSIZ FETCH SO'ROVINI BUTUNLAY O'CHIRIB TASHLANG!
+
 
 window.startGameLoop = function() {
     // O'yinni to'liq reset qilish
