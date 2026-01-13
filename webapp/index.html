@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Tomama 2026 - Adrenalin Edition</title>
     <!-- Telegram SDK -->
-    <script src="telegram.org"></script>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -38,7 +38,6 @@
 <div id="rankingMenu" class="menu-container hidden">
     <div class="menu-box">
         <h2 style="color: white; margin-top: 0; margin-bottom: 20px;">🏆 Top-10 Reyting</h2>
-        <!-- Reyting ro'yxati shu yerga yuklanadi -->
         <div id="rankingList" style="color: white; min-height: 150px; text-align: left; overflow-y: auto; max-height: 250px;">
             Yuklanmoqda...
         </div>
@@ -62,39 +61,34 @@
 
 <script>
     const tg = window.Telegram?.WebApp;
-    // DIQQAT: Railway URL manzilini shu yerga yozing!
     const SERVER_URL = 'https://oyinbackent-production.up.railway.app'; 
 
     if (tg) {
         tg.ready();
         tg.expand();
         tg.setHeaderColor('#81d4fa');
-        // Telegram tepasidagi "Ortga" tugmasi
         tg.BackButton.onClick(() => hideAllMenus());
     }
 
-    // Statistika va ma'lumotlarni yangilash
+    // Yangilangan UI stats
     function updateUIStats() {
         document.getElementById('personalBest').innerText = localStorage.getItem('highScore') || 0;
         document.getElementById('totalDiamonds').innerText = localStorage.getItem('totalDiamonds') || 0;
     }
 
-    // Sahifa yuklanganda statistika yangilanadi
     window.addEventListener('load', updateUIStats);
 
-    /* --- REYTINGNI SERVERDAN OLISH --- */
+    // --- Telegram avatar bilan leaderboard ---
     async function loadLeaderboard() {
         const list = document.getElementById('rankingList');
         list.innerHTML = "<p style='text-align:center;'>Yuklanmoqda...</p>";
-        
+
         try {
-            // Serverdan ma'lumot olish (Railway)
             const res = await fetch(`${SERVER_URL}/leaderboard`);
             if (!res.ok) throw new Error('Server xatosi');
             const data = await res.json();
-            
-            list.innerHTML = ""; // Tozalash
 
+            list.innerHTML = "";
             if (data.length === 0) {
                 list.innerHTML = "<p style='text-align:center;'>Hozircha rekordlar yo'q</p>";
                 return;
@@ -107,8 +101,8 @@
                     index === 2 ? "🥉" :
                     `${index + 1}.`;
 
-                const avatar = player.photo_url
-                    ? `<img src="${player.photo_url}" style="width:36px;height:36px;border-radius:50%;margin-right:10px;">`
+                const avatar = player.photo
+                    ? `<img src="${player.photo}" style="width:36px;height:36px;border-radius:50%;margin-right:10px;">`
                     : `<div style="width:36px;height:36px;border-radius:50%;background:#444;margin-right:10px;"></div>`;
 
                 const playerRow = `
@@ -118,20 +112,24 @@
                         align-items:center;
                         padding:10px;
                         border-bottom:1px solid rgba(255,255,255,0.1);
-                   ">
+                    ">
                         <div style="display:flex;align-items:center;">
                             <span style="margin-right:8px;">${medal}</span>
                             ${avatar}
                             <span>@${player.username}</span>
-                       </div>
-                       <strong style="color:#ffd700;">${player.score} 🍅</strong>
-                   </div>
-               `;
-
-               list.innerHTML += playerRow;
+                        </div>
+                        <strong style="color:#ffd700;">${player.score} 🍅</strong>
+                    </div>
+                `;
+                list.innerHTML += playerRow;
             });
+        } catch (e) {
+            list.innerHTML = "<p style='color: #ff5252; text-align:center;'>Reytingni yuklab bo'lmadi.<br><small>Server ulanmagan</small></p>";
+            console.error("Leaderboard error:", e);
+        }
+    }
 
-    /* --- MENYU FUNKSIYALARI --- */
+    // --- MENYU FUNKSIYALARI ---
     function startGame() {
         tg?.HapticFeedback.impactOccurred('medium');
         document.getElementById('mainMenu').classList.add('hidden');
@@ -143,7 +141,7 @@
         tg?.BackButton.show();
         document.getElementById('mainMenu').classList.add('hidden');
         document.getElementById('rankingMenu').classList.remove('hidden');
-        loadLeaderboard(); // Oyna ochilganda reytingni yuklaymiz
+        loadLeaderboard();
     }
 
     function showCoupons() {
