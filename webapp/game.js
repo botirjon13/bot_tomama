@@ -201,23 +201,36 @@ canvas.addEventListener('mousemove', moveBasket);
 function gameOver() {
     if (isGameOver) return;
     isGameOver = true;
+    
+    // 1. Darhol hamma narsani to'xtatish
     clearInterval(spawnInterval);
     
-    // Ma'lumotlarni saqlash
+    // 2. Telegram tebranishi (Xatolik signali)
+    if (tg && tg.HapticFeedback) {
+        tg.HapticFeedback.notificationOccurred('error');
+    }
+
+    // 3. Ma'lumotlarni saqlash
     totalDiamonds += currentDiamonds;
     localStorage.setItem('totalDiamonds', totalDiamonds);
-    if (score > highScore) localStorage.setItem('highScore', score);
+    if (score > highScore) {
+        localStorage.setItem('highScore', score);
+    }
     
-    // Natija oynasi va menyuga qaytish
+    // 4. Natija oynasi (200ms kechikish adrenalin effekti uchun yaxshi)
     setTimeout(() => {
         if (tg) {
-            tg.MainButton.setText(`Natija: ${score} 🍅 | Menyu`);
+            // MainButtonni tozalash va yangilash
+            tg.MainButton.offClick(); // Eski kliklarni tozalash (MUHIM!)
+            tg.MainButton.setText(`NATIJA: ${score} 🍅 | MENYUGA QAYTISH`);
             tg.MainButton.show();
             tg.MainButton.onClick(() => {
-                window.location.reload(); // Sahifani yangilab asosiy menyuga qaytaradi
+                tg.MainButton.hide();
+                window.location.reload(); 
             });
         } else {
-            alert(`O'yin tugadi!\nJami ball: ${score}\nAlmazlar: ${currentDiamonds}`);
+            // Agar brauzerda bo'lsa
+            alert(`O'yin tugadi!\nJami pomidorlar: ${score}\nTopilgan almazlar: ${currentDiamonds}`);
             window.location.reload();
         }
     }, 200);
