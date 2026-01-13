@@ -217,10 +217,11 @@ function gameOver() {
     fetch('https://oyinbackent-production.up.railway.app/save', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        const user = window.Telegram?.WebApp?.initDataUnsafe?.user;
         body: JSON.stringify({
-            name: user?.first_name || "Oyinchi",
-            score: score, 
-            userId: user?.id || "guest_" + Math.random()
+            userId: user?.id,
+            name: user?.username ? '@' + user.username : user?.first_name,
+            score: score
         })
     })
     .then(() => console.log("Natija serverga saqlandi!"))
