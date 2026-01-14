@@ -3,7 +3,7 @@ const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 
 // Telegram SDK ni xavfsiz aniqlash
-const tg = window.Telegram?.WebApp || null; 
+//const tg = window.Telegram?.WebApp || null; 
 // Server manzilini aniqlash
 const SERVER_URL = 'https://oyinbackent-production.up.railway.app';
 
