@@ -3,21 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Tomama 2026 - Adrenalin Edition</title>
-    <!-- Telegram SDK -->
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <title>Tomama 2026</title>
+    <script src="telegram.org"></script>
     <link rel="stylesheet" href="style.css">
-    <style>
-        /* Qo'shimcha qulaylik uchun CSS (Agar style.css da bo'lmasa) */
-        .hidden { display: none !important; }
-        .back-btn { background: #ff4d4d !important; width: 100%; border-radius: 10px; padding: 12px; border: none; color: white; font-weight: bold; cursor: pointer; }
-        #rankingList::-webkit-scrollbar { width: 5px; }
-        #rankingList::-webkit-scrollbar-thumb { background: #888; border-radius: 10px; }
-    </style>
 </head>
 <body>
 
-<!-- FON ELEMENTLARI -->
 <div class="bg-elements">
     <img src="assaets/products/tomatoFon.png" class="floating-item" style="top:10%; left:10%;">
     <img src="assaets/products/tomatoFon.png" class="floating-item" style="top:40%; right:15%;">
@@ -27,14 +18,12 @@
 <!-- ASOSIY MENYU -->
 <div id="mainMenu" class="menu-container">
     <div class="menu-box">
-        <img src="assaets/logo.png" class="game-logo" alt="Tomama Logo">
-        
+        <img src="assaets/logo.png" class="game-logo" alt="Logo">
         <div id="recordBox">
             <span style="opacity: 0.7; font-size: 0.8em;">ENG YAXSHI NATIJA</span><br>
             <strong id="personalBest">0</strong><br>
             <span style="color: #00f2ff; font-weight: bold; font-size: 1.1em;">💎 <span id="totalDiamonds">0</span></span>
         </div>
-
         <button onclick="startGame()">▶️ O'yinni boshlash</button>
         <button onclick="showRanking()">🏆 Reyting (Top-10)</button>
         <button onclick="showCoupons()">🎫 Kuponlarim</button>
@@ -44,130 +33,76 @@
 <!-- REYTING MENYUSI -->
 <div id="rankingMenu" class="menu-container hidden">
     <div class="menu-box">
-        <h2 style="color: white; margin-top: 0; margin-bottom: 20px; text-align: center;">🏆 Top-10 Reyting</h2>
-        <div id="rankingList" style="color: white; min-height: 200px; text-align: left; overflow-y: auto; max-height: 300px; background: rgba(0,0,0,0.3); border-radius: 10px; padding: 10px;">
-            Yuklanmoqda...
-        </div>
-        <button class="back-btn" style="margin-top: 20px;" onclick="hideAllMenus()">⬅️ Ortga</button>
+        <h2 style="text-align: center;">🏆 Top-10 Reyting</h2>
+        <div id="rankingList" class="scroll-box">Yuklanmoqda...</div>
+        <button class="back-btn" onclick="hideAllMenus()">⬅️ Ortga</button>
     </div>
 </div>
 
 <!-- KUPONLAR MENYUSI -->
 <div id="couponsMenu" class="menu-container hidden">
     <div class="menu-box">
-        <h2 style="color: white; margin-top: 0; text-align: center;">🎫 Kuponlarim</h2>
-        <div id="couponList" style="color: white; margin-bottom: 20px; text-align: center;">
-            <p style="opacity: 0.6;">Hozircha kuponlar yo‘q</p>
-        </div>
+        <h2>🎫 Kuponlarim</h2>
+        <div id="couponList"><p style="opacity: 0.6;">Hozircha kuponlar yo‘q</p></div>
         <button class="back-btn" onclick="hideAllMenus()">⬅️ Ortga</button>
     </div>
 </div>
 
-<!-- O'YIN MAYDONI -->
 <canvas id="gameCanvas" class="hidden"></canvas>
 
-<!-- REYTING JADVALI (game.js dan chaqiriladi) -->
-<div id="leaderboardModal" class="hidden" style="position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:9999; color:white; padding:20px;">
-     <h2 style="text-align: center; color: #ffd700;">🏆 JORIY REYTING</h2>
-     <div id="leaderboardList" style="margin: 20px 0;"></div>
-     <button class="back-btn" onclick="closeLeaderboard()">YOPISH</button>
-</div>
-
+<script src="game.js"></script>
 <script>
     const tg = window.Telegram?.WebApp;
-    const SERVER_URL = 'https://oyinbackent-production.up.railway.app'; 
+    const SERVER_URL = 'https://oyinbackent-production.up.railway.app';
 
     if (tg) {
         tg.ready();
         tg.expand();
-        tg.setHeaderColor('#81d4fa');
-        tg.BackButton.onClick(() => hideAllMenus());
     }
 
-    // UI stats yangilash
     function updateUIStats() {
         document.getElementById('personalBest').innerText = localStorage.getItem('highScore') || 0;
         document.getElementById('totalDiamonds').innerText = localStorage.getItem('totalDiamonds') || 0;
     }
-
     window.addEventListener('load', updateUIStats);
 
-    // --- PostgreSQL Leaderboard yuklash ---
     async function loadLeaderboard() {
         const list = document.getElementById('rankingList');
-        list.innerHTML = "<p style='text-align:center;'>Yuklanmoqda...</p>";
-
         try {
             const res = await fetch(`${SERVER_URL}/leaderboard`);
             const data = await res.json();
-
-            list.innerHTML = "";
-            if (!data || data.length === 0) {
-                list.innerHTML = "<p style='text-align:center;'>Hozircha rekordlar yo'q</p>";
-                return;
-            }
-
-            data.forEach((player, index) => {
-                const medal = index === 0 ? "🥇" : index === 1 ? "🥈" : index === 2 ? "🥉" : `${index + 1}.`;
-                
-                list.innerHTML += `
-                    <div style="display:flex; justify-content:space-between; align-items:center; padding:12px; border-bottom:1px solid rgba(255,255,255,0.05);">
-                        <span>${medal} <b>${player.username}</b></span>
-                        <strong style="color:#ffd700;">${player.score} 🍅</strong>
-                    </div>
-                `;
+            list.innerHTML = data.length ? "" : "Rekordlar yo'q";
+            data.forEach((p, i) => {
+                const medal = i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : `${i+1}.`;
+                list.innerHTML += `<div class="rank-item"><span>${medal} ${p.username}</span><strong>${p.score} 🍅</strong></div>`;
             });
-        } catch (e) {
-            list.innerHTML = "<p style='color: #ff5252; text-align:center;'>Xatolik yuz berdi</p>";
-        }
+        } catch (e) { list.innerHTML = "Xatolik..."; }
     }
 
-    // --- MENYU FUNKSIYALARI ---
     function startGame() {
-    console.log("O'yin boshlanmoqda..."); // Tekshirish uchun
-    tg?.HapticFeedback.impactOccurred('medium');
-    
-    document.getElementById('mainMenu').style.display = 'none'; // Menyuni yopish
-    const canvasEl = document.getElementById('gameCanvas');
-    canvasEl.classList.remove('hidden');
-    canvasEl.style.display = 'block'; // Canvasni majburan ko'rsatish
-    
-    if (typeof window.startGameLoop === 'function') {
-        window.startGameLoop();
-    } else {
-        alert("Xato: game.js hali yuklanmadi yoki xatolik bor!");
+        tg?.HapticFeedback.impactOccurred('medium');
+        document.getElementById('mainMenu').classList.add('hidden');
+        document.getElementById('gameCanvas').classList.remove('hidden');
+        if (window.startGameLoop) window.startGameLoop();
     }
-}
-
 
     function showRanking() {
-        tg?.BackButton.show();
         document.getElementById('mainMenu').classList.add('hidden');
         document.getElementById('rankingMenu').classList.remove('hidden');
         loadLeaderboard();
     }
 
     function showCoupons() {
-        tg?.BackButton.show();
         document.getElementById('mainMenu').classList.add('hidden');
         document.getElementById('couponsMenu').classList.remove('hidden');
     }
 
     function hideAllMenus() {
-        tg?.BackButton.hide();
         document.querySelectorAll('.menu-container').forEach(m => m.classList.add('hidden'));
-        document.getElementById('mainMenu').classList.remove('hidden');
         document.getElementById('gameCanvas').classList.add('hidden');
+        document.getElementById('mainMenu').classList.remove('hidden');
         updateUIStats();
     }
-
-    // game.js uchun yordamchi funksiyalar
-    window.closeLeaderboard = function() {
-        document.getElementById('leaderboardModal').classList.add('hidden');
-        window.location.reload();
-    }
 </script>
-
-<script src="game.js"></script>
 </body>
 </html>
