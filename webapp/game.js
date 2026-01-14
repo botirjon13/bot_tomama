@@ -2,7 +2,9 @@
 // game.js ning eng tepasiga qo'shing (SERVER_URL dan keyin)
 const tg = window.Telegram?.WebApp;
 // Global o'zgaruvchilarni index.html dan olamiz
-let currentUsername = window.currentUsername || "Mehmon"; 
+// game.js
+// let currentUsername = window.currentUsername || "Mehmon"; // Agar shunaqa bo'lsa, 'let'ni o'chiring
+currentUsername = window.currentUsername || "Mehmon"; // Shunday qilib qoldiring
 let currentTelegramId = window.currentTelegramId || 0;
 
 const canvas = document.getElementById('gameCanvas');
