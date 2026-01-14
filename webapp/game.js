@@ -201,14 +201,58 @@ function gameOver() {
     isGameOver = true;
     clearInterval(spawnInterval);
 
+    // Telegram foydalanuvchi ma'lumotlari
+    const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
+    
+    // Serverga yuborish ma'lumotlari
     const gameData = {
-        telegram_id: window.currentTelegramId || 0, // Global ID ni ishlatamiz
-        username: window.currentUsername || "Noma'lum", // Global ismni ishlatamiz
+        // Agar Telegram orqali kirmasa, 0 ketadi. Test uchun Math.random() ishlatsangiz yaxshi bo'ladi
+        telegram_id: tgUser?.id || 0, 
+        username: tgUser?.username || tgUser?.first_name || "Noma'lum",
         score: score
     };
 
-    // ... qolgan fetch va UI kodlari o'sha-o'sha qoladi ...
+    console.log("Natija bazaga yuborilmoqda:", gameData);
+
+    // 1. Natijani serverga saqlash
+    fetch('https://oyinbackent-production.up.railway.app/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(gameData)
+    })
+    .then(res => res.json())
+    .then(data => {
+        console.log("Muvaffaqiyatli saqlandi. Server javobi:", data);
+    })
+    .catch(e => console.error("Server bilan bog'lanishda xato:", e));
+
+    // 2. LocalStorage yangilash (Qo'shimcha xotira sifatida)
+    totalDiamonds += currentDiamonds;
+    localStorage.setItem('totalDiamonds', totalDiamonds);
+    if (score > (localStorage.getItem('highScore') || 0)) {
+        localStorage.setItem('highScore', score);
+    }
+
+    // 3. UI/MainButton sozlamalari
+    setTimeout(() => {
+        if (window.Telegram?.WebApp) {
+            const tg = window.Telegram.WebApp;
+            tg.MainButton.setText(`NATIJA: ${score} 🍅 | REYTINGNI KO'RISH`);
+            tg.MainButton.show();
+            
+            tg.MainButton.onClick(() => {
+                tg.MainButton.hide();
+                // window.location.reload() o'rniga hideAllMenus() chaqirish yaxshiroq
+                // window.location.reload(); 
+                if(typeof hideAllMenus === 'function') hideAllMenus();
+            });
+        } else {
+            alert(`O'yin tugadi!\nBall: ${score}\nAlmazlar: ${currentDiamonds}`);
+            window.location.reload();
+        }
+    }, 300);
 }
+
 
 // O‘yinni boshlash
 window.startGameLoop = function() {
