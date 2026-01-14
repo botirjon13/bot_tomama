@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Tomama 2026</title>
+    <title>Tomama 2026 - Adrenalin Edition</title>
     <!-- Telegram SDK -->
-    <script src="telegram.org"></script>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -20,7 +20,7 @@
 <!-- ASOSIY MENYU -->
 <div id="mainMenu" class="menu-container">
     <div class="menu-box">
-        <img src="assaets/logo.png" class="game-logo" alt="Logo">
+        <img src="assaets/logo.png" class="game-logo" alt="Tomama Logo">
         
         <div id="recordBox">
             <span style="opacity: 0.7; font-size: 0.8em;">ENG YAXSHI NATIJA</span><br>
@@ -28,17 +28,19 @@
             <span style="color: #00f2ff; font-weight: bold; font-size: 1.1em;">💎 <span id="totalDiamonds">0</span></span>
         </div>
 
-        <button type="button" onclick="startGame()">▶️ O'yinni boshlash</button>
-        <button type="button" onclick="showRanking()">🏆 Reyting (Top-10)</button>
-        <button type="button" onclick="showCoupons()">🎫 Kuponlarim</button>
+        <button onclick="startGame()">▶️ O'yinni boshlash</button>
+        <button onclick="showRanking()">🏆 Reyting (Top-10)</button>
+        <button onclick="showCoupons()">🎫 Kuponlarim</button>
     </div>
 </div>
 
 <!-- REYTING MENYUSI -->
 <div id="rankingMenu" class="menu-container hidden">
     <div class="menu-box">
-        <h2 style="color: white; text-align: center;">🏆 Top-10 Reyting</h2>
-        <div id="rankingList" class="scroll-box">Yuklanmoqda...</div>
+        <h2 style="color: white; margin-top: 0; margin-bottom: 20px;">🏆 Top-10 Reyting</h2>
+        <div id="rankingList" style="color: white; min-height: 150px; text-align: left; overflow-y: auto; max-height: 250px;">
+            Yuklanmoqda...
+        </div>
         <button class="back-btn" style="margin-top: 20px;" onclick="hideAllMenus()">⬅️ Ortga</button>
     </div>
 </div>
@@ -46,8 +48,8 @@
 <!-- KUPONLAR MENYUSI -->
 <div id="couponsMenu" class="menu-container hidden">
     <div class="menu-box">
-        <h2 style="color: white; text-align: center;">🎫 Kuponlarim</h2>
-        <div id="couponList" style="color: white; text-align: center;">
+        <h2 style="color: white; margin-top: 0;">🎫 Kuponlarim</h2>
+        <div id="couponList" style="color: white; margin-bottom: 20px;">
             <p style="opacity: 0.6;">Hozircha kuponlar yo‘q</p>
         </div>
         <button class="back-btn" onclick="hideAllMenus()">⬅️ Ortga</button>
@@ -57,9 +59,6 @@
 <!-- O'YIN MAYDONI -->
 <canvas id="gameCanvas" class="hidden"></canvas>
 
-<!-- O'yin skripti oxirida yuklanadi -->
-<script src="game.js"></script>
-
 <script>
     const tg = window.Telegram?.WebApp;
     const SERVER_URL = 'https://oyinbackent-production.up.railway.app'; 
@@ -67,65 +66,99 @@
     if (tg) {
         tg.ready();
         tg.expand();
+        tg.setHeaderColor('#81d4fa');
+        tg.BackButton.onClick(() => hideAllMenus());
     }
 
+    // Yangilangan UI stats
     function updateUIStats() {
         document.getElementById('personalBest').innerText = localStorage.getItem('highScore') || 0;
         document.getElementById('totalDiamonds').innerText = localStorage.getItem('totalDiamonds') || 0;
     }
-    
-    window.onload = updateUIStats;
 
+    window.addEventListener('load', updateUIStats);
+
+    // --- Telegram avatar bilan leaderboard ---
     async function loadLeaderboard() {
         const list = document.getElementById('rankingList');
-        list.innerHTML = "Yuklanmoqda...";
+        list.innerHTML = "<p style='text-align:center;'>Yuklanmoqda...</p>";
+
         try {
             const res = await fetch(`${SERVER_URL}/leaderboard`);
+            if (!res.ok) throw new Error('Server xatosi');
             const data = await res.json();
+
             list.innerHTML = "";
-            data.forEach((p, i) => {
-                const medal = i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : `${i+1}.`;
-                list.innerHTML += `<div style="display:flex; justify-content:space-between; padding:10px; border-bottom:1px solid rgba(255,255,255,0.1);">
-                    <span>${medal} ${p.username}</span>
-                    <strong style="color:#ffd700;">${p.score} 🍅</strong>
-                </div>`;
+            if (data.length === 0) {
+                list.innerHTML = "<p style='text-align:center;'>Hozircha rekordlar yo'q</p>";
+                return;
+            }
+
+            data.forEach((player, index) => {
+                const medal =
+                    index === 0 ? "🥇" :
+                    index === 1 ? "🥈" :
+                    index === 2 ? "🥉" :
+                    `${index + 1}.`;
+
+                const avatar = player.photo
+                    ? `<img src="${player.photo}" style="width:36px;height:36px;border-radius:50%;margin-right:10px;">`
+                    : `<div style="width:36px;height:36px;border-radius:50%;background:#444;margin-right:10px;"></div>`;
+
+                const playerRow = `
+                    <div style="
+                        display:flex;
+                        justify-content:space-between;
+                        align-items:center;
+                        padding:10px;
+                        border-bottom:1px solid rgba(255,255,255,0.1);
+                    ">
+                        <div style="display:flex;align-items:center;">
+                            <span style="margin-right:8px;">${medal}</span>
+                            ${avatar}
+                            <span>@${player.username}</span>
+                        </div>
+                        <strong style="color:#ffd700;">${player.score} 🍅</strong>
+                    </div>
+                `;
+                list.innerHTML += playerRow;
             });
         } catch (e) {
-            list.innerHTML = "Xatolik yuz berdi";
+            list.innerHTML = "<p style='color: #ff5252; text-align:center;'>Reytingni yuklab bo'lmadi.<br><small>Server ulanmagan</small></p>";
+            console.error("Leaderboard error:", e);
         }
     }
 
+    // --- MENYU FUNKSIYALARI ---
     function startGame() {
-        console.log("Start bosildi");
         tg?.HapticFeedback.impactOccurred('medium');
         document.getElementById('mainMenu').classList.add('hidden');
-        const canvasEl = document.getElementById('gameCanvas');
-        canvasEl.classList.remove('hidden');
-        
-        if (window.startGameLoop) {
-            window.startGameLoop();
-        } else {
-            console.error("startGameLoop topilmadi!");
-        }
+        document.getElementById('gameCanvas').classList.remove('hidden');
+        if (window.startGameLoop) window.startGameLoop();
     }
 
     function showRanking() {
+        tg?.BackButton.show();
         document.getElementById('mainMenu').classList.add('hidden');
         document.getElementById('rankingMenu').classList.remove('hidden');
         loadLeaderboard();
     }
 
     function showCoupons() {
+        tg?.BackButton.show();
         document.getElementById('mainMenu').classList.add('hidden');
         document.getElementById('couponsMenu').classList.remove('hidden');
     }
 
     function hideAllMenus() {
-        document.getElementById('rankingMenu').classList.add('hidden');
-        document.getElementById('couponsMenu').classList.add('hidden');
+        tg?.BackButton.hide();
+        document.querySelectorAll('.menu-container').forEach(m => m.classList.add('hidden'));
         document.getElementById('mainMenu').classList.remove('hidden');
         updateUIStats();
     }
 </script>
+
+<!-- O'yin logikasi -->
+<script src="game.js"></script>
 </body>
 </html>
