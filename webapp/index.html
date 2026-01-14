@@ -124,11 +124,21 @@
 
     // --- MENYU FUNKSIYALARI ---
     function startGame() {
-        tg?.HapticFeedback.impactOccurred('medium');
-        document.getElementById('mainMenu').classList.add('hidden');
-        document.getElementById('gameCanvas').classList.remove('hidden');
-        if (window.startGameLoop) window.startGameLoop();
+    console.log("O'yin boshlanmoqda..."); // Tekshirish uchun
+    tg?.HapticFeedback.impactOccurred('medium');
+    
+    document.getElementById('mainMenu').style.display = 'none'; // Menyuni yopish
+    const canvasEl = document.getElementById('gameCanvas');
+    canvasEl.classList.remove('hidden');
+    canvasEl.style.display = 'block'; // Canvasni majburan ko'rsatish
+    
+    if (typeof window.startGameLoop === 'function') {
+        window.startGameLoop();
+    } else {
+        alert("Xato: game.js hali yuklanmadi yoki xatolik bor!");
     }
+}
+
 
     function showRanking() {
         tg?.BackButton.show();
