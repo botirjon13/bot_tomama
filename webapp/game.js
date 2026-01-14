@@ -3,7 +3,6 @@
 const tg = window.Telegram?.WebApp;
 // Global o'zgaruvchilarni index.html dan olamiz
 // game.js
-// let currentUsername = window.currentUsername || "Mehmon"; // Agar shunaqa bo'lsa, 'let'ni o'chiring
 currentUsername = window.currentUsername || "Mehmon"; // Shunday qilib qoldiring
 currentTelegramId = window.currentTelegramId || 0;
 
