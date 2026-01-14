@@ -1,7 +1,7 @@
 // game.js - 2026 Updated Version
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
-const tg = window.Telegram?.WebApp;
+//const tg = window.Telegram?.WebApp;
 
 // Ekran o'lchamlari
 canvas.width = window.innerWidth;
