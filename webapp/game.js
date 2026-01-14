@@ -1,7 +1,9 @@
-// game.js
+// game.js - 2026 Updated Version
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
+const tg = window.Telegram?.WebApp;
 
+// Ekran o'lchamlari
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 
@@ -9,13 +11,13 @@ let highScore = localStorage.getItem('highScore') || 0;
 let totalDiamonds = parseInt(localStorage.getItem('totalDiamonds')) || 0;
 
 let assets = {};
-let imagesToLoad = 5; // basket, tomato, brand, snow, bomb
+let imagesToLoad = 5;
 let loadedCount = 0;
 let assetsLoaded = false;
 
-const path = 'assaets/';
+const path = 'assaets/'; // Papka nomini tekshiring (assets/ bo'lishi mumkin)
 
-// Rasmlarni yuklash funksiyasi
+// Rasmlarni yuklash
 const loadAsset = (key, src) => {
     assets[key] = new Image();
     assets[key].src = path + src;
@@ -67,7 +69,7 @@ function spawnItem() {
     });
 }
 
-// O‘yin update
+// O‘yinni yangilab turish (Loop)
 function update() {
     if (isGameOver) return;
 
@@ -90,7 +92,7 @@ function update() {
         ctx.fillRect(0, 0, canvas.width, canvas.height);
     }
 
-    // Savat
+    // Savatni chizish
     if (assetsLoaded && assets.basket.complete) {
         ctx.drawImage(assets.basket, basket.x, basket.y, basket.width, basket.height);
     }
@@ -100,22 +102,14 @@ function update() {
         p.y += currentGlobalSpeed * p.speedMod;
         p.x += p.drift;
 
-        if (p.x <= 0) {
-            p.x = 0;
-            p.drift = Math.abs(p.drift);
-        } else if (p.x + p.width >= canvas.width) {
-            p.x = canvas.width - p.width;
-            p.drift = -Math.abs(p.drift);
+        // Devorga urilish
+        if (p.x <= 0 || p.x + p.width >= canvas.width) p.drift *= -1;
+
+        if (assetsLoaded && assets[p.type]) {
+            ctx.drawImage(assets[p.type], p.x, p.y, p.width, p.height);
         }
 
-        if (assetsLoaded) {
-            let img = assets[p.type];
-            if (img && img.complete) {
-                ctx.drawImage(img, p.x, p.y, p.width, p.height);
-            }
-        }
-
-        // Collision
+        // To'qnashuvni aniqlash (Collision)
         if (p.y + p.height - 15 >= basket.y && p.y <= basket.y + 40 &&
             p.x + p.width - 10 >= basket.x && p.x <= basket.x + basket.width) {
 
@@ -131,12 +125,12 @@ function update() {
                 else if (p.type === 'snow') slowModeTimer = 350;
                 if (tg?.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
             }
-
             items.splice(i, 1); i--;
             if (lives <= 0) { gameOver(); break; }
             continue;
         }
 
+        // Pastga tushib ketish
         if (p.y > canvas.height) {
             if (p.type === 'tomato' || p.type === 'brand') {
                 lives--;
@@ -156,102 +150,107 @@ function update() {
     }
 }
 
-// UI chizish
 function drawUI() {
-    ctx.fillStyle = "rgba(0, 0, 0, 0.75)";
-    ctx.roundRect(15, 15, 240, 160, 20);
+    ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
+    ctx.roundRect(15, 15, 220, 140, 15);
     ctx.fill();
 
     ctx.fillStyle = 'white';
-    ctx.font = 'bold 22px sans-serif';
-    ctx.fillText('🍅 Ball: ' + score, 30, 50);
+    ctx.font = 'bold 20px sans-serif';
+    ctx.fillText('🍅 Ball: ' + score, 30, 45);
     ctx.fillStyle = '#00f2ff';
-    ctx.fillText('💎 Almaz: ' + currentDiamonds, 30, 85);
+    ctx.fillText('💎 Almaz: ' + currentDiamonds, 30, 80);
     ctx.fillStyle = '#ff4d4d';
-    ctx.fillText('❤️ Jon: ' + '❤️'.repeat(Math.max(0, lives)), 30, 120);
-
-    if (combo > 2) {
-        ctx.fillStyle = '#FFD700';
-        ctx.font = 'italic bold 26px sans-serif';
-        ctx.fillText('🔥 COMBO x' + combo, 30, 155);
-    }
+    ctx.fillText('❤️ Jon: ' + '❤️'.repeat(Math.max(0, lives)), 30, 115);
 }
 
-// Savatni harakatlantirish
 function moveBasket(e) {
     let clientX = e.touches ? e.touches[0].clientX : e.clientX;
     let targetX = clientX - basket.width / 2;
-    if (targetX < 0) targetX = 0;
-    if (targetX + basket.width > canvas.width) targetX = canvas.width - basket.width;
-    basket.x = targetX;
+    basket.x = Math.max(0, Math.min(canvas.width - basket.width, targetX));
 }
 
 canvas.addEventListener('touchmove', (e) => { e.preventDefault(); moveBasket(e); }, { passive: false });
 canvas.addEventListener('mousemove', moveBasket);
 
+// Reytingni serverdan olish va ko'rsatish
+async function showLeaderboard() {
+    const modal = document.getElementById('leaderboardModal');
+    const list = document.getElementById('leaderboardList');
+    if(!modal || !list) return;
+
+    modal.style.display = 'block';
+    list.innerHTML = "<p style='text-align:center'>Yuklanmoqda...</p>";
+
+    try {
+        const res = await fetch('oyinbackent-production.up.railway.app');
+        const data = await res.json();
+        list.innerHTML = "";
+        data.forEach((p, i) => {
+            list.innerHTML += `
+                <div style="display:flex; justify-content:space-between; padding:8px; border-bottom:1px solid #444;">
+                    <span>${i+1}. ${p.username}</span>
+                    <span style="color:#ffde00">${p.score} 🍅</span>
+                </div>`;
+        });
+    } catch (e) {
+        list.innerHTML = "<p>Xatolik yuz berdi.</p>";
+    }
+}
+
+function closeLeaderboard() {
+    document.getElementById('leaderboardModal').style.display = 'none';
+}
+
+// O'yin tugashi
 function gameOver() {
     if (isGameOver) return;
     isGameOver = true;
     clearInterval(spawnInterval);
 
-    // Telegram foydalanuvchi ma'lumotlari
-    const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
+    const tgUser = tg?.initDataUnsafe?.user;
     
-    // Serverga yuborish ma'lumotlari
-    const gameData = {
-        telegram_id: tgUser?.id || 0, // Agar Telegramsiz test qilayotgan bo'lsangiz 0 ketadi
-        username: tgUser?.username || tgUser?.first_name || "Noma'lum",
-        score: score
-    };
-
-    // 1. Natijani serverga saqlash
+    // Serverga saqlash (PostgreSQL)
     fetch('https://oyinbackent-production.up.railway.app/save', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(gameData)
-    })
-    .then(res => res.json())
-    .then(data => {
-        console.log("Muvaffaqiyatli saqlandi. Rekord:", data.highScore);
-    })
-    .catch(e => console.error("Server bilan bog'lanishda xato:", e));
+        body: JSON.stringify({
+            telegram_id: tgUser?.id || 0,
+            username: tgUser?.username || tgUser?.first_name || "Oyinchi",
+            score: score
+        })
+    }).catch(e => console.error("Saqlashda xato:", e));
 
-    // 2. LocalStorage yangilash (Qo'shimcha xotira sifatida)
     totalDiamonds += currentDiamonds;
     localStorage.setItem('totalDiamonds', totalDiamonds);
-    if (score > (localStorage.getItem('highScore') || 0)) {
-        localStorage.setItem('highScore', score);
-    }
+    if (score > highScore) localStorage.setItem('highScore', score);
 
-    // 3. UI/MainButton sozlamalari
-    setTimeout(() => {
-        if (window.Telegram?.WebApp) {
-            const tg = window.Telegram.WebApp;
-            tg.MainButton.setText(`NATIJA: ${score} 🍅 | REYTINGNI KO'RISH`);
-            tg.MainButton.show();
-            
-            // Tugma bosilganda qayta yuklash o'rniga reytingni ko'rsatish funksiyasini chaqirsa bo'ladi
-            tg.MainButton.onClick(() => {
-                tg.MainButton.hide();
-                // Bu yerda reyting oynasini ochish funksiyasini chaqirishingiz mumkin
-                window.location.reload(); 
-            });
-        } else {
-            alert(`O'yin tugadi!\nBall: ${score}\nAlmazlar: ${currentDiamonds}`);
+    if (tg) {
+        tg.MainButton.setText(`BALL: ${score} | QAYTA O'YNASH`);
+        tg.MainButton.show();
+        tg.MainButton.onClick(() => {
+            tg.MainButton.hide();
             window.location.reload();
-        }
-    }, 300);
+        });
+    } else {
+        setTimeout(() => {
+            alert("O'yin tugadi! Ball: " + score);
+            window.location.reload();
+        }, 500);
+    }
 }
 
-// O‘yinni boshlash
 window.startGameLoop = function() {
+    document.getElementById('mainMenu').style.display = 'none';
     isGameOver = false;
     score = 0; lives = 3; currentDiamonds = 0; combo = 0;
-    items = []; slowModeTimer = 0; gameSpeed = 7;
-
+    items = []; slowModeTimer = 0;
+    
     if (spawnInterval) clearInterval(spawnInterval);
     spawnInterval = setInterval(spawnItem, 650);
-
     requestAnimationFrame(update);
-    if (tg) tg.MainButton.hide();
 };
+
+// Global funksiyalarni bog'lash (HTML uchun)
+window.showLeaderboard = showLeaderboard;
+window.closeLeaderboard = closeLeaderboard;
