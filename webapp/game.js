@@ -5,7 +5,7 @@ const tg = window.Telegram?.WebApp;
 // game.js
 // let currentUsername = window.currentUsername || "Mehmon"; // Agar shunaqa bo'lsa, 'let'ni o'chiring
 currentUsername = window.currentUsername || "Mehmon"; // Shunday qilib qoldiring
-let currentTelegramId = window.currentTelegramId || 0;
+currentTelegramId = window.currentTelegramId || 0;
 
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
