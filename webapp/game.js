@@ -5,10 +5,10 @@ const ctx = canvas.getContext('2d');
 // Telegram SDK ni xavfsiz aniqlash
 //const tg = window.Telegram?.WebApp || null;
 
-if (tg) {
-    tg.ready();
-    tg.expand();
-}
+//if (tg) {
+//    tg.ready();
+//    tg.expand();
+//}
 
 // Ekran o'lchami
 canvas.width = window.innerWidth;
