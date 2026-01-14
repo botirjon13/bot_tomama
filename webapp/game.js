@@ -1,11 +1,4 @@
 // game.js
-// game.js ning eng tepasiga qo'shing (SERVER_URL dan keyin)
-const tg = window.Telegram?.WebApp;
-// Global o'zgaruvchilarni index.html dan olamiz
-// game.js
-currentUsername = window.currentUsername || "Mehmon"; // Shunday qilib qoldiring
-currentTelegramId = window.currentTelegramId || 0;
-
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 
@@ -196,7 +189,6 @@ function moveBasket(e) {
 canvas.addEventListener('touchmove', (e) => { e.preventDefault(); moveBasket(e); }, { passive: false });
 canvas.addEventListener('mousemove', moveBasket);
 
-// game.js ichidagi gameOver funksiyasini yangilang
 function gameOver() {
     if (isGameOver) return;
     isGameOver = true;
@@ -207,13 +199,10 @@ function gameOver() {
     
     // Serverga yuborish ma'lumotlari
     const gameData = {
-        // Agar Telegram orqali kirmasa, 0 ketadi. Test uchun Math.random() ishlatsangiz yaxshi bo'ladi
-        telegram_id: tgUser?.id || 0, 
+        telegram_id: tgUser?.id || 0, // Agar Telegramsiz test qilayotgan bo'lsangiz 0 ketadi
         username: tgUser?.username || tgUser?.first_name || "Noma'lum",
         score: score
     };
-
-    console.log("Natija bazaga yuborilmoqda:", gameData);
 
     // 1. Natijani serverga saqlash
     fetch('https://oyinbackent-production.up.railway.app/save', {
@@ -223,7 +212,7 @@ function gameOver() {
     })
     .then(res => res.json())
     .then(data => {
-        console.log("Muvaffaqiyatli saqlandi. Server javobi:", data);
+        console.log("Muvaffaqiyatli saqlandi. Rekord:", data.highScore);
     })
     .catch(e => console.error("Server bilan bog'lanishda xato:", e));
 
@@ -241,11 +230,11 @@ function gameOver() {
             tg.MainButton.setText(`NATIJA: ${score} 🍅 | REYTINGNI KO'RISH`);
             tg.MainButton.show();
             
+            // Tugma bosilganda qayta yuklash o'rniga reytingni ko'rsatish funksiyasini chaqirsa bo'ladi
             tg.MainButton.onClick(() => {
                 tg.MainButton.hide();
-                // window.location.reload() o'rniga hideAllMenus() chaqirish yaxshiroq
-                // window.location.reload(); 
-                if(typeof hideAllMenus === 'function') hideAllMenus();
+                // Bu yerda reyting oynasini ochish funksiyasini chaqirishingiz mumkin
+                window.location.reload(); 
             });
         } else {
             alert(`O'yin tugadi!\nBall: ${score}\nAlmazlar: ${currentDiamonds}`);
@@ -253,7 +242,6 @@ function gameOver() {
         }
     }, 300);
 }
-
 
 // O‘yinni boshlash
 window.startGameLoop = function() {
