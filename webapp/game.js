@@ -1,48 +1,43 @@
-// game.js - 2026 FULL REPAIR
+// game.js
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 
 // Telegram SDK ni xavfsiz aniqlash
-//const tg = window.Telegram?.WebApp || null;
+const tg = window.Telegram?.WebApp || null; 
+// Server manzilini aniqlash
+const SERVER_URL = 'https://oyinbackent-production.up.railway.app';
 
-//if (tg) {
-//    tg.ready();
-//    tg.expand();
-//}
 
-// Ekran o'lchami
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
-
-// ... qolgan kodlar (assets, update, draw)
-
 
 let highScore = localStorage.getItem('highScore') || 0;
 let totalDiamonds = parseInt(localStorage.getItem('totalDiamonds')) || 0;
 
 let assets = {};
-let imagesToLoad = 5;
+let imagesToLoad = 5; // basket, tomato, brand, snow, bomb
 let loadedCount = 0;
 let assetsLoaded = false;
 
-// SIZDA SHU PAPKA NOMI TO'G'RI:
-const path = 'assaets/'; 
-const SERVER_URL = 'https://oyinbackent-production.up.railway.app';
+const path = 'assaets/';
 
+// Rasmlarni yuklash funksiyasi
 const loadAsset = (key, src) => {
     assets[key] = new Image();
     assets[key].src = path + src;
-    assets[key].onload = () => {
-        loadedCount++;
-        if (loadedCount === imagesToLoad) assetsLoaded = true;
-    };
+    assets[key].onload = imageLoaded;
     assets[key].onerror = () => {
-        console.error(key + " yuklanmadi: " + path + src);
-        loadedCount++; // Xato bo'lsa ham o'yinni davom ettirish
+        console.error(key + " yuklanmadi: " + src);
+        imageLoaded();
     };
 };
 
-// ASSETS yuklash
+function imageLoaded() {
+    loadedCount++;
+    if (loadedCount === imagesToLoad) assetsLoaded = true;
+}
+
+// ASSETS
 loadAsset('basket', 'basket.png');
 loadAsset('tomato', 'products/tomatoFon.png');
 loadAsset('brand', 'products/tomato.png');
@@ -57,8 +52,10 @@ let spawnInterval = null;
 let slowModeTimer = 0, shakeTimer = 0;
 let gameSpeed = 7;
 
+// Obyektlarni yaratish
 function spawnItem() {
     if (isGameOver) return;
+
     let rand = Math.random();
     let type = 'tomato';
     if (rand < 0.15) type = 'bomb';
@@ -76,6 +73,7 @@ function spawnItem() {
     });
 }
 
+// O‘yin update
 function update() {
     if (isGameOver) return;
 
@@ -92,8 +90,14 @@ function update() {
 
     let currentGlobalSpeed = (gameSpeed + (score / 200)) * (slowModeTimer > 0 ? 0.5 : 1);
 
-    // Savatni chizish
-    if (assetsLoaded && assets.basket && assets.basket.complete) {
+    if (slowModeTimer > 0) {
+        slowModeTimer--;
+        ctx.fillStyle = "rgba(135, 206, 250, 0.2)";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
+
+    // Savat
+    if (assetsLoaded && assets.basket.complete) {
         ctx.drawImage(assets.basket, basket.x, basket.y, basket.width, basket.height);
     }
 
@@ -102,17 +106,29 @@ function update() {
         p.y += currentGlobalSpeed * p.speedMod;
         p.x += p.drift;
 
-        if (p.x <= 0 || p.x + p.width >= canvas.width) p.drift *= -1;
-
-        if (assetsLoaded && assets[p.type]) {
-            ctx.drawImage(assets[p.type], p.x, p.y, p.width, p.height);
+        if (p.x <= 0) {
+            p.x = 0;
+            p.drift = Math.abs(p.drift);
+        } else if (p.x + p.width >= canvas.width) {
+            p.x = canvas.width - p.width;
+            p.drift = -Math.abs(p.drift);
         }
 
-        // To'qnashuv (Collision)
+        if (assetsLoaded) {
+            let img = assets[p.type];
+            if (img && img.complete) {
+                ctx.drawImage(img, p.x, p.y, p.width, p.height);
+            }
+        }
+
+        // Collision
         if (p.y + p.height - 15 >= basket.y && p.y <= basket.y + 40 &&
             p.x + p.width - 10 >= basket.x && p.x <= basket.x + basket.width) {
+
             if (p.type === 'bomb') {
-                lives--; combo = 0; shakeTimer = 25;
+                lives--;
+                combo = 0;
+                shakeTimer = 25;
                 if (tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('error');
             } else {
                 combo++;
@@ -121,6 +137,7 @@ function update() {
                 else if (p.type === 'snow') slowModeTimer = 350;
                 if (tg?.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
             }
+
             items.splice(i, 1); i--;
             if (lives <= 0) { gameOver(); break; }
             continue;
@@ -128,7 +145,9 @@ function update() {
 
         if (p.y > canvas.height) {
             if (p.type === 'tomato' || p.type === 'brand') {
-                lives--; combo = 0; shakeTimer = 15;
+                lives--;
+                combo = 0;
+                shakeTimer = 15;
                 if (tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('warning');
             }
             items.splice(i, 1); i--;
@@ -143,58 +162,96 @@ function update() {
     }
 }
 
+// UI chizish
 function drawUI() {
-    ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
-    ctx.roundRect(15, 15, 220, 140, 15);
+    ctx.fillStyle = "rgba(0, 0, 0, 0.75)";
+    ctx.roundRect(15, 15, 240, 160, 20);
     ctx.fill();
+
     ctx.fillStyle = 'white';
-    ctx.font = 'bold 20px sans-serif';
-    ctx.fillText('🍅 Ball: ' + score, 30, 45);
+    ctx.font = 'bold 22px sans-serif';
+    ctx.fillText('🍅 Ball: ' + score, 30, 50);
     ctx.fillStyle = '#00f2ff';
-    ctx.fillText('💎 Almaz: ' + currentDiamonds, 30, 80);
+    ctx.fillText('💎 Almaz: ' + currentDiamonds, 30, 85);
     ctx.fillStyle = '#ff4d4d';
-    ctx.fillText('❤️ Jon: ' + '❤️'.repeat(Math.max(0, lives)), 30, 115);
+    ctx.fillText('❤️ Jon: ' + '❤️'.repeat(Math.max(0, lives)), 30, 120);
+
+    if (combo > 2) {
+        ctx.fillStyle = '#FFD700';
+        ctx.font = 'italic bold 26px sans-serif';
+        ctx.fillText('🔥 COMBO x' + combo, 30, 155);
+    }
 }
 
+// Savatni harakatlantirish
 function moveBasket(e) {
     let clientX = e.touches ? e.touches[0].clientX : e.clientX;
     let targetX = clientX - basket.width / 2;
-    basket.x = Math.max(0, Math.min(canvas.width - basket.width, targetX));
+    if (targetX < 0) targetX = 0;
+    if (targetX + basket.width > canvas.width) targetX = canvas.width - basket.width;
+    basket.x = targetX;
 }
 
 canvas.addEventListener('touchmove', (e) => { e.preventDefault(); moveBasket(e); }, { passive: false });
 canvas.addEventListener('mousemove', moveBasket);
 
+// DATABASE BILAN BOG'LANISH QISMI
 function gameOver() {
     if (isGameOver) return;
     isGameOver = true;
     clearInterval(spawnInterval);
 
+    // Telegram foydalanuvchi ma'lumotlarini olish
     const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
-    const userId = tgUser?.id || 12345;
-    const userName = tgUser?.username || tgUser?.first_name || "Oyinchi";
+    
+    // Serverga yuborish uchun ma'lumotlarni tayyorlash
+    const gameData = {
+        telegram_id: tgUser?.id || 0, 
+        username: tgUser?.username || tgUser?.first_name || "Noma'lum",
+        score: score
+    };
 
+    // Natijani PostgreSQL serveriga yuborish
     fetch(`${SERVER_URL}/save`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ telegram_id: userId, username: userName, score: score })
-    }).catch(err => console.log("Saqlashda xato"));
+        body: JSON.stringify(gameData)
+    })
+    .then(() => console.log("Natija serverga saqlandi!"))
+    .catch(e => console.error("Server bilan bog'lanishda xato:", e));
 
-    if (tg) {
-        tg.MainButton.setText(`BALL: ${score} | QAYTA O'YNASH`);
-        tg.MainButton.show();
-        tg.MainButton.onClick(() => window.location.reload());
-    } else {
-        alert("O'yin tugadi! Ball: " + score);
-        window.location.reload();
-    }
+    totalDiamonds += currentDiamonds;
+    localStorage.setItem('totalDiamonds', totalDiamonds);
+    if (score > highScore) localStorage.setItem('highScore', score);
+
+    setTimeout(() => {
+        if (window.Telegram?.WebApp) {
+            const tg = window.Telegram.WebApp;
+            tg.MainButton.offClick();
+            tg.MainButton.setText(`NATIJA: ${score} 🍅 | MENYUGA QAYTISH`);
+            tg.MainButton.show();
+            tg.MainButton.onClick(() => {
+                tg.MainButton.hide();
+                window.location.reload();
+            });
+        } else {
+            alert(`O'yin tugadi!\nJami pomidorlar: ${score}\nTopilgan almazlar: ${currentDiamonds}`);
+            window.location.reload();
+        }
+    }, 200);
 }
 
+
+// O‘yinni boshlash
 window.startGameLoop = function() {
     isGameOver = false;
-    score = 0; lives = 3; currentDiamonds = 0;
-    items = [];
+    score = 0; lives = 3; currentDiamonds = 0; combo = 0;
+    items = []; slowModeTimer = 0; gameSpeed = 7;
+
     if (spawnInterval) clearInterval(spawnInterval);
     spawnInterval = setInterval(spawnItem, 650);
+
     requestAnimationFrame(update);
+    // tg o'zgaruvchisi endi global aniqlangan
+    if (tg) tg.MainButton.hide();
 };
