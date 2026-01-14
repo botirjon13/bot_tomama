@@ -1,11 +1,21 @@
 // game.js - 2026 FULL REPAIR
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
-const tg = window.Telegram?.WebApp;
 
-// Ekran o'lchamlarini sozlash
+// Telegram SDK ni xavfsiz aniqlash
+const tg = window.Telegram?.WebApp || null;
+
+if (tg) {
+    tg.ready();
+    tg.expand();
+}
+
+// Ekran o'lchami
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
+
+// ... qolgan kodlar (assets, update, draw)
+
 
 let highScore = localStorage.getItem('highScore') || 0;
 let totalDiamonds = parseInt(localStorage.getItem('totalDiamonds')) || 0;
