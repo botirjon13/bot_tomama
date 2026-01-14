@@ -80,54 +80,60 @@
 
     // --- Telegram avatar bilan leaderboard ---
     async function loadLeaderboard() {
-        const list = document.getElementById('rankingList');
-        list.innerHTML = "<p style='text-align:center;'>Yuklanmoqda...</p>";
+    const list = document.getElementById('rankingList');
+    list.innerHTML = "<p style='text-align:center;'>Yuklanmoqda...</p>";
 
-        try {
-            const res = await fetch(`${SERVER_URL}/leaderboard`);
-            if (!res.ok) throw new Error('Server xatosi');
-            const data = await res.json();
+    try {
+        const res = await fetch(`${SERVER_URL}/leaderboard`);
+        if (!res.ok) throw new Error('Server xatosi');
+        
+        // Serverdan result.rows (massiv) keladi
+        const data = await res.json(); 
 
-            list.innerHTML = "";
-            if (data.length === 0) {
-                list.innerHTML = "<p style='text-align:center;'>Hozircha rekordlar yo'q</p>";
-                return;
-            }
-
-            data.forEach((player, index) => {
-                const medal =
-                    index === 0 ? "🥇" :
-                    index === 1 ? "🥈" :
-                    index === 2 ? "🥉" :
-                    `${index + 1}.`;
-
-                const avatar = player.photo
-                    ? `<img src="${player.photo}" style="width:36px;height:36px;border-radius:50%;margin-right:10px;">`
-                    : `<div style="width:36px;height:36px;border-radius:50%;background:#444;margin-right:10px;"></div>`;
-
-                const playerRow = `
-                    <div style="
-                        display:flex;
-                        justify-content:space-between;
-                        align-items:center;
-                        padding:10px;
-                        border-bottom:1px solid rgba(255,255,255,0.1);
-                    ">
-                        <div style="display:flex;align-items:center;">
-                            <span style="margin-right:8px;">${medal}</span>
-                            ${avatar}
-                            <span>@${player.username}</span>
-                        </div>
-                        <strong style="color:#ffd700;">${player.score} 🍅</strong>
-                    </div>
-                `;
-                list.innerHTML += playerRow;
-            });
-        } catch (e) {
-            list.innerHTML = "<p style='color: #ff5252; text-align:center;'>Reytingni yuklab bo'lmadi.<br><small>Server ulanmagan</small></p>";
-            console.error("Leaderboard error:", e);
+        list.innerHTML = "";
+        if (!data || data.length === 0) {
+            list.innerHTML = "<p style='text-align:center;'>Hozircha rekordlar yo'q</p>";
+            return;
         }
+
+        data.forEach((player, index) => {
+            const medal = index === 0 ? "🥇" : index === 1 ? "🥈" : index === 2 ? "🥉" : `${index + 1}.`;
+
+            // Serverda 'photo' yo'qligi uchun chiroyli rangli doira chiqaramiz
+            const playerRow = `
+                <div style="
+                    display:flex;
+                    justify-content:space-between;
+                    align-items:center;
+                    padding:10px;
+                    border-bottom:1px solid rgba(255,255,255,0.1);
+                    background: rgba(255,255,255,0.05);
+                    margin-bottom: 5px;
+                    border-radius: 12px;
+                ">
+                    <div style="display:flex; align-items:center;">
+                        <span style="margin-right:10px; font-weight:bold; width:25px;">${medal}</span>
+                        <div style="
+                            width:32px; height:32px; border-radius:50%; 
+                            background:linear-gradient(45deg, #ff5252, #b71c1c); 
+                            margin-right:10px; display:flex; align-items:center; 
+                            justify-content:center; font-size:12px; font-weight:bold; color:white;
+                        ">
+                            ${(player.username || "U").charAt(0).toUpperCase()}
+                        </div>
+                        <span style="font-size:14px;">${player.username || "Noma'lum"}</span>
+                    </div>
+                    <strong style="color:#ffd700;">${player.score} 🍅</strong>
+                </div>
+            `;
+            list.innerHTML += playerRow;
+        });
+    } catch (e) {
+        list.innerHTML = "<p style='color: #ff5252; text-align:center;'>Reytingni yuklab bo'lmadi.<br><small>Server ulanmagan</small></p>";
+        console.error("Leaderboard error:", e);
     }
+}
+
 
     // --- MENYU FUNKSIYALARI ---
     function startGame() {
