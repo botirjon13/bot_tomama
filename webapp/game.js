@@ -189,44 +189,58 @@ function moveBasket(e) {
 canvas.addEventListener('touchmove', (e) => { e.preventDefault(); moveBasket(e); }, { passive: false });
 canvas.addEventListener('mousemove', moveBasket);
 
-// Game over
 function gameOver() {
     if (isGameOver) return;
     isGameOver = true;
     clearInterval(spawnInterval);
 
-    const user = window.Telegram?.WebApp?.initDataUnsafe?.user;
+    // Telegram foydalanuvchi ma'lumotlari
+    const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
+    
+    // Serverga yuborish ma'lumotlari
+    const gameData = {
+        telegram_id: tgUser?.id || 0, // Agar Telegramsiz test qilayotgan bo'lsangiz 0 ketadi
+        username: tgUser?.username || tgUser?.first_name || "Noma'lum",
+        score: score
+    };
 
+    // 1. Natijani serverga saqlash
     fetch('https://oyinbackent-production.up.railway.app/save', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            telegram_id: user?.id,
-            username: user?.username || user?.first_name || "Oyinchi",
-            score: score
-        })
+        body: JSON.stringify(gameData)
     })
-    .then(() => console.log("Natija serverga saqlandi!"))
+    .then(res => res.json())
+    .then(data => {
+        console.log("Muvaffaqiyatli saqlandi. Rekord:", data.highScore);
+    })
     .catch(e => console.error("Server bilan bog'lanishda xato:", e));
 
+    // 2. LocalStorage yangilash (Qo'shimcha xotira sifatida)
     totalDiamonds += currentDiamonds;
     localStorage.setItem('totalDiamonds', totalDiamonds);
-    if (score > highScore) localStorage.setItem('highScore', score);
+    if (score > (localStorage.getItem('highScore') || 0)) {
+        localStorage.setItem('highScore', score);
+    }
 
+    // 3. UI/MainButton sozlamalari
     setTimeout(() => {
-        if (tg) {
-            tg.MainButton.offClick();
-            tg.MainButton.setText(`NATIJA: ${score} 🍅 | MENYUGA QAYTISH`);
+        if (window.Telegram?.WebApp) {
+            const tg = window.Telegram.WebApp;
+            tg.MainButton.setText(`NATIJA: ${score} 🍅 | REYTINGNI KO'RISH`);
             tg.MainButton.show();
+            
+            // Tugma bosilganda qayta yuklash o'rniga reytingni ko'rsatish funksiyasini chaqirsa bo'ladi
             tg.MainButton.onClick(() => {
                 tg.MainButton.hide();
-                window.location.reload();
+                // Bu yerda reyting oynasini ochish funksiyasini chaqirishingiz mumkin
+                window.location.reload(); 
             });
         } else {
-            alert(`O'yin tugadi!\nJami pomidorlar: ${score}\nTopilgan almazlar: ${currentDiamonds}`);
+            alert(`O'yin tugadi!\nBall: ${score}\nAlmazlar: ${currentDiamonds}`);
             window.location.reload();
         }
-    }, 200);
+    }, 300);
 }
 
 // O‘yinni boshlash
