@@ -88,63 +88,54 @@
         document.getElementById('totalDiamonds').innerText = localStorage.getItem('totalDiamonds') || 0;
     }
 
-    window.addEventListener('load', updateUIStats);
+   window.addEventListener('load', () => {
+    updateUIStats();
+    checkUserInfo();
+});
 
-    // --- Telegram avatar bilan leaderboard ---
-    async function loadLeaderboard() {
-    const list = document.getElementById('rankingList');
-    list.innerHTML = "<p style='text-align:center;'>Yuklanmoqda...</p>";
+let currentUsername = "Mehmon";
+let currentTelegramId = 0;
 
-    try {
-        const res = await fetch(`${SERVER_URL}/leaderboard`);
-        if (!res.ok) throw new Error('Server xatosi');
-        
-        // Serverdan result.rows (massiv) keladi
-        const data = await res.json(); 
-
-        list.innerHTML = "";
-        if (!data || data.length === 0) {
-            list.innerHTML = "<p style='text-align:center;'>Hozircha rekordlar yo'q</p>";
-            return;
+function checkUserInfo() {
+    if (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) {
+        // Telegram orqali kirgan
+        currentUsername = tg.initDataUnsafe.user.first_name || tg.initDataUnsafe.user.username || "O'yinchi";
+        currentTelegramId = tg.initDataUnsafe.user.id;
+        console.log("Telegram user info loaded:", currentUsername);
+    } else {
+        // Brauzer orqali kirgan yoki ma'lumotlar yo'q
+        const savedUsername = localStorage.getItem('localUsername');
+        if (savedUsername) {
+            currentUsername = savedUsername;
+            // Test ID si beriladi
+            currentTelegramId = localStorage.getItem('localUserId') || Math.floor(Math.random() * 100000000);
+            localStorage.setItem('localUserId', currentTelegramId);
+        } else {
+            // Birinchi marta kirish, ro'yxatdan o'tish oynasini ko'rsatamiz
+            document.getElementById('mainMenu').classList.add('hidden');
+            document.getElementById('registrationMenu').classList.remove('hidden');
         }
-
-        data.forEach((player, index) => {
-            const medal = index === 0 ? "🥇" : index === 1 ? "🥈" : index === 2 ? "🥉" : `${index + 1}.`;
-
-            // Serverda 'photo' yo'qligi uchun chiroyli rangli doira chiqaramiz
-            const playerRow = `
-                <div style="
-                    display:flex;
-                    justify-content:space-between;
-                    align-items:center;
-                    padding:10px;
-                    border-bottom:1px solid rgba(255,255,255,0.1);
-                    background: rgba(255,255,255,0.05);
-                    margin-bottom: 5px;
-                    border-radius: 12px;
-                ">
-                    <div style="display:flex; align-items:center;">
-                        <span style="margin-right:10px; font-weight:bold; width:25px;">${medal}</span>
-                        <div style="
-                            width:32px; height:32px; border-radius:50%; 
-                            background:linear-gradient(45deg, #ff5252, #b71c1c); 
-                            margin-right:10px; display:flex; align-items:center; 
-                            justify-content:center; font-size:12px; font-weight:bold; color:white;
-                        ">
-                            ${(player.username || "U").charAt(0).toUpperCase()}
-                        </div>
-                        <span style="font-size:14px;">${player.username || "Noma'lum"}</span>
-                    </div>
-                    <strong style="color:#ffd700;">${player.score} 🍅</strong>
-                </div>
-            `;
-            list.innerHTML += playerRow;
-        });
-    } catch (e) {
-        list.innerHTML = "<p style='color: #ff5252; text-align:center;'>Reytingni yuklab bo'lmadi.<br><small>Server ulanmagan</small></p>";
-        console.error("Leaderboard error:", e);
     }
 }
+
+function saveUsernameAndContinue() {
+    const inputEl = document.getElementById('usernameInput');
+    const username = inputEl.value.trim();
+
+    if (username.length > 2) {
+        currentUsername = username;
+        localStorage.setItem('localUsername', username);
+        // Yangi test ID yaratamiz
+        currentTelegramId = Math.floor(Math.random() * 100000000) + Date.now();
+        localStorage.setItem('localUserId', currentTelegramId);
+
+        document.getElementById('registrationMenu').classList.add('hidden');
+        document.getElementById('mainMenu').classList.remove('hidden');
+    } else {
+        alert("Iltimos, haqiqiy ism kiriting!");
+    }
+}
+
 
 
     // --- MENYU FUNKSIYALARI ---
