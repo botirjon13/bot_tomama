@@ -7,6 +7,13 @@
     <!-- Telegram SDK -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <link rel="stylesheet" href="style.css">
+    <style>
+        /* Qo'shimcha qulaylik uchun CSS (Agar style.css da bo'lmasa) */
+        .hidden { display: none !important; }
+        .back-btn { background: #ff4d4d !important; width: 100%; border-radius: 10px; padding: 12px; border: none; color: white; font-weight: bold; cursor: pointer; }
+        #rankingList::-webkit-scrollbar { width: 5px; }
+        #rankingList::-webkit-scrollbar-thumb { background: #888; border-radius: 10px; }
+    </style>
 </head>
 <body>
 
@@ -37,8 +44,8 @@
 <!-- REYTING MENYUSI -->
 <div id="rankingMenu" class="menu-container hidden">
     <div class="menu-box">
-        <h2 style="color: white; margin-top: 0; margin-bottom: 20px;">🏆 Top-10 Reyting</h2>
-        <div id="rankingList" style="color: white; min-height: 150px; text-align: left; overflow-y: auto; max-height: 250px;">
+        <h2 style="color: white; margin-top: 0; margin-bottom: 20px; text-align: center;">🏆 Top-10 Reyting</h2>
+        <div id="rankingList" style="color: white; min-height: 200px; text-align: left; overflow-y: auto; max-height: 300px; background: rgba(0,0,0,0.3); border-radius: 10px; padding: 10px;">
             Yuklanmoqda...
         </div>
         <button class="back-btn" style="margin-top: 20px;" onclick="hideAllMenus()">⬅️ Ortga</button>
@@ -48,8 +55,8 @@
 <!-- KUPONLAR MENYUSI -->
 <div id="couponsMenu" class="menu-container hidden">
     <div class="menu-box">
-        <h2 style="color: white; margin-top: 0;">🎫 Kuponlarim</h2>
-        <div id="couponList" style="color: white; margin-bottom: 20px;">
+        <h2 style="color: white; margin-top: 0; text-align: center;">🎫 Kuponlarim</h2>
+        <div id="couponList" style="color: white; margin-bottom: 20px; text-align: center;">
             <p style="opacity: 0.6;">Hozircha kuponlar yo‘q</p>
         </div>
         <button class="back-btn" onclick="hideAllMenus()">⬅️ Ortga</button>
@@ -58,6 +65,13 @@
 
 <!-- O'YIN MAYDONI -->
 <canvas id="gameCanvas" class="hidden"></canvas>
+
+<!-- REYTING JADVALI (game.js dan chaqiriladi) -->
+<div id="leaderboardModal" class="hidden" style="position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:9999; color:white; padding:20px;">
+     <h2 style="text-align: center; color: #ffd700;">🏆 JORIY REYTING</h2>
+     <div id="leaderboardList" style="margin: 20px 0;"></div>
+     <button class="back-btn" onclick="closeLeaderboard()">YOPISH</button>
+</div>
 
 <script>
     const tg = window.Telegram?.WebApp;
@@ -70,7 +84,7 @@
         tg.BackButton.onClick(() => hideAllMenus());
     }
 
-    // Yangilangan UI stats
+    // UI stats yangilash
     function updateUIStats() {
         document.getElementById('personalBest').innerText = localStorage.getItem('highScore') || 0;
         document.getElementById('totalDiamonds').innerText = localStorage.getItem('totalDiamonds') || 0;
@@ -78,54 +92,33 @@
 
     window.addEventListener('load', updateUIStats);
 
-    // --- Telegram avatar bilan leaderboard ---
+    // --- PostgreSQL Leaderboard yuklash ---
     async function loadLeaderboard() {
         const list = document.getElementById('rankingList');
         list.innerHTML = "<p style='text-align:center;'>Yuklanmoqda...</p>";
 
         try {
             const res = await fetch(`${SERVER_URL}/leaderboard`);
-            if (!res.ok) throw new Error('Server xatosi');
             const data = await res.json();
 
             list.innerHTML = "";
-            if (data.length === 0) {
+            if (!data || data.length === 0) {
                 list.innerHTML = "<p style='text-align:center;'>Hozircha rekordlar yo'q</p>";
                 return;
             }
 
             data.forEach((player, index) => {
-                const medal =
-                    index === 0 ? "🥇" :
-                    index === 1 ? "🥈" :
-                    index === 2 ? "🥉" :
-                    `${index + 1}.`;
-
-                const avatar = player.photo
-                    ? `<img src="${player.photo}" style="width:36px;height:36px;border-radius:50%;margin-right:10px;">`
-                    : `<div style="width:36px;height:36px;border-radius:50%;background:#444;margin-right:10px;"></div>`;
-
-                const playerRow = `
-                    <div style="
-                        display:flex;
-                        justify-content:space-between;
-                        align-items:center;
-                        padding:10px;
-                        border-bottom:1px solid rgba(255,255,255,0.1);
-                    ">
-                        <div style="display:flex;align-items:center;">
-                            <span style="margin-right:8px;">${medal}</span>
-                            ${avatar}
-                            <span>@${player.username}</span>
-                        </div>
+                const medal = index === 0 ? "🥇" : index === 1 ? "🥈" : index === 2 ? "🥉" : `${index + 1}.`;
+                
+                list.innerHTML += `
+                    <div style="display:flex; justify-content:space-between; align-items:center; padding:12px; border-bottom:1px solid rgba(255,255,255,0.05);">
+                        <span>${medal} <b>${player.username}</b></span>
                         <strong style="color:#ffd700;">${player.score} 🍅</strong>
                     </div>
                 `;
-                list.innerHTML += playerRow;
             });
         } catch (e) {
-            list.innerHTML = "<p style='color: #ff5252; text-align:center;'>Reytingni yuklab bo'lmadi.<br><small>Server ulanmagan</small></p>";
-            console.error("Leaderboard error:", e);
+            list.innerHTML = "<p style='color: #ff5252; text-align:center;'>Xatolik yuz berdi</p>";
         }
     }
 
@@ -154,11 +147,17 @@
         tg?.BackButton.hide();
         document.querySelectorAll('.menu-container').forEach(m => m.classList.add('hidden'));
         document.getElementById('mainMenu').classList.remove('hidden');
+        document.getElementById('gameCanvas').classList.add('hidden');
         updateUIStats();
+    }
+
+    // game.js uchun yordamchi funksiyalar
+    window.closeLeaderboard = function() {
+        document.getElementById('leaderboardModal').classList.add('hidden');
+        window.location.reload();
     }
 </script>
 
-<!-- O'yin logikasi -->
 <script src="game.js"></script>
 </body>
 </html>
