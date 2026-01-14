@@ -4,50 +4,62 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Tomama 2026</title>
+    <!-- Telegram SDK -->
     <script src="telegram.org"></script>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
+<!-- FON ELEMENTLARI -->
 <div class="bg-elements">
     <img src="assaets/products/tomatoFon.png" class="floating-item" style="top:10%; left:10%;">
     <img src="assaets/products/tomatoFon.png" class="floating-item" style="top:40%; right:15%;">
     <img src="assaets/products/tomatoFon.png" class="floating-item" style="bottom:15%; left:20%;">
 </div>
 
+<!-- ASOSIY MENYU -->
 <div id="mainMenu" class="menu-container">
     <div class="menu-box">
-        <img src="assaets/logo.png" class="game-logo" alt="Tomama Logo">
+        <img src="assaets/logo.png" class="game-logo" alt="Logo">
+        
         <div id="recordBox">
             <span style="opacity: 0.7; font-size: 0.8em;">ENG YAXSHI NATIJA</span><br>
             <strong id="personalBest">0</strong><br>
             <span style="color: #00f2ff; font-weight: bold; font-size: 1.1em;">💎 <span id="totalDiamonds">0</span></span>
         </div>
-        <button onclick="startGame()">▶️ O'yinni boshlash</button>
-        <button onclick="showRanking()">🏆 Reyting (Top-10)</button>
-        <button onclick="showCoupons()">🎫 Kuponlarim</button>
+
+        <button type="button" onclick="startGame()">▶️ O'yinni boshlash</button>
+        <button type="button" onclick="showRanking()">🏆 Reyting (Top-10)</button>
+        <button type="button" onclick="showCoupons()">🎫 Kuponlarim</button>
     </div>
 </div>
 
+<!-- REYTING MENYUSI -->
 <div id="rankingMenu" class="menu-container hidden">
     <div class="menu-box">
-        <h2 style="color: white; margin-top: 0; margin-bottom: 20px; text-align: center;">🏆 Top-10 Reyting</h2>
+        <h2 style="color: white; text-align: center;">🏆 Top-10 Reyting</h2>
         <div id="rankingList" class="scroll-box">Yuklanmoqda...</div>
         <button class="back-btn" style="margin-top: 20px;" onclick="hideAllMenus()">⬅️ Ortga</button>
     </div>
 </div>
 
+<!-- KUPONLAR MENYUSI -->
 <div id="couponsMenu" class="menu-container hidden">
     <div class="menu-box">
-        <h2 style="color: white; margin-top: 0; text-align: center;">🎫 Kuponlarim</h2>
-        <div id="couponList"><p style="opacity: 0.6;">Hozircha kuponlar yo‘q</p></div>
+        <h2 style="color: white; text-align: center;">🎫 Kuponlarim</h2>
+        <div id="couponList" style="color: white; text-align: center;">
+            <p style="opacity: 0.6;">Hozircha kuponlar yo‘q</p>
+        </div>
         <button class="back-btn" onclick="hideAllMenus()">⬅️ Ortga</button>
     </div>
 </div>
 
+<!-- O'YIN MAYDONI -->
 <canvas id="gameCanvas" class="hidden"></canvas>
 
+<!-- O'yin skripti oxirida yuklanadi -->
 <script src="game.js"></script>
+
 <script>
     const tg = window.Telegram?.WebApp;
     const SERVER_URL = 'https://oyinbackent-production.up.railway.app'; 
@@ -55,56 +67,63 @@
     if (tg) {
         tg.ready();
         tg.expand();
-        tg.setHeaderColor('#81d4fa');
-        tg.BackButton.onClick(() => hideAllMenus());
     }
 
     function updateUIStats() {
         document.getElementById('personalBest').innerText = localStorage.getItem('highScore') || 0;
         document.getElementById('totalDiamonds').innerText = localStorage.getItem('totalDiamonds') || 0;
     }
-    window.addEventListener('load', updateUIStats);
+    
+    window.onload = updateUIStats;
 
     async function loadLeaderboard() {
         const list = document.getElementById('rankingList');
-        list.innerHTML = "<p>Yuklanmoqda...</p>";
+        list.innerHTML = "Yuklanmoqda...";
         try {
             const res = await fetch(`${SERVER_URL}/leaderboard`);
             const data = await res.json();
             list.innerHTML = "";
             data.forEach((p, i) => {
                 const medal = i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : `${i+1}.`;
-                list.innerHTML += `<div><span>${medal} <b>${p.username}</b></span><strong style="color:#ffd700;">${p.score} 🍅</strong></div>`;
+                list.innerHTML += `<div style="display:flex; justify-content:space-between; padding:10px; border-bottom:1px solid rgba(255,255,255,0.1);">
+                    <span>${medal} ${p.username}</span>
+                    <strong style="color:#ffd700;">${p.score} 🍅</strong>
+                </div>`;
             });
-        } catch (e) { list.innerHTML = "<p>Xatolik yuz berdi</p>"; }
+        } catch (e) {
+            list.innerHTML = "Xatolik yuz berdi";
+        }
     }
 
     function startGame() {
+        console.log("Start bosildi");
         tg?.HapticFeedback.impactOccurred('medium');
         document.getElementById('mainMenu').classList.add('hidden');
         const canvasEl = document.getElementById('gameCanvas');
         canvasEl.classList.remove('hidden');
-        if (typeof window.startGameLoop === 'function') window.startGameLoop();
+        
+        if (window.startGameLoop) {
+            window.startGameLoop();
+        } else {
+            console.error("startGameLoop topilmadi!");
+        }
     }
 
     function showRanking() {
-        tg?.BackButton.show();
         document.getElementById('mainMenu').classList.add('hidden');
         document.getElementById('rankingMenu').classList.remove('hidden');
         loadLeaderboard();
     }
 
     function showCoupons() {
-        tg?.BackButton.show();
         document.getElementById('mainMenu').classList.add('hidden');
         document.getElementById('couponsMenu').classList.remove('hidden');
     }
 
     function hideAllMenus() {
-        tg?.BackButton.hide();
-        document.querySelectorAll('.menu-container').forEach(m => m.classList.add('hidden'));
+        document.getElementById('rankingMenu').classList.add('hidden');
+        document.getElementById('couponsMenu').classList.add('hidden');
         document.getElementById('mainMenu').classList.remove('hidden');
-        document.getElementById('gameCanvas').classList.add('hidden');
         updateUIStats();
     }
 </script>
