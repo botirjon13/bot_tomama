@@ -67,6 +67,9 @@ function spawnItem() {
 function update() {
     if (isGameOver) return;
 
+    // 1. Koordinatalarni saqlash
+    ctx.save();
+
     let sx = 0, sy = 0;
     if (shakeTimer > 0) {
         sx = (Math.random() - 0.5) * 15;
@@ -74,24 +77,32 @@ function update() {
         shakeTimer--;
     }
 
-    ctx.save();
+    // 2. MUHIM: Har doim butun ekranni tozalash (silkinishdan oldin)
+    ctx.setTransform(1, 0, 0, 1, 0, 0); // Transformatsiyani nolga tushirish
+    ctx.clearRect(0, 0, canvas.width, canvas.height); 
+
+    // 3. Endi silkinishni qo'llash
     ctx.translate(sx, sy);
-    ctx.clearRect(-50, -50, canvas.width + 100, canvas.height + 100);
 
     let currentGlobalSpeed = (gameSpeed + (score / 250)) * (slowModeTimer > 0 ? 0.5 : 1);
 
-    if (slowModeTimer > 0) slowModeTimer--;
+    if (slowModeTimer > 0) {
+        slowModeTimer--;
+        ctx.fillStyle = "rgba(135, 206, 250, 0.2)";
+        ctx.fillRect(-50, -50, canvas.width + 100, canvas.height + 100);
+    }
+    
     if (magnetTimer > 0) magnetTimer--;
 
     // Savatni chizish
     if (assetsLoaded && assets.basket.complete) {
         ctx.drawImage(assets.basket, basket.x, basket.y, basket.width, basket.height);
         
-        // Qalqon vizual effekti
         if (shieldActive) {
             ctx.beginPath();
             ctx.strokeStyle = '#00f2ff';
             ctx.lineWidth = 4;
+            // Qalqonni savat bilan birga chizish
             ctx.arc(basket.x + basket.width/2, basket.y + basket.height/2, 70, 0, Math.PI * 2);
             ctx.stroke();
         }
@@ -100,7 +111,6 @@ function update() {
     for (let i = 0; i < items.length; i++) {
         let p = items[i];
 
-        // Magnit effekti: Pomidorlarni savatga tortish
         if (magnetTimer > 0 && (p.type === 'tomato' || p.type === 'brand')) {
             let dx = (basket.x + basket.width/2) - (p.x + p.width/2);
             p.x += dx * 0.1;
@@ -109,24 +119,19 @@ function update() {
         p.y += currentGlobalSpeed * p.speedMod;
         p.x += p.drift;
 
-        // Devordan qaytish
         if (p.x <= 0 || p.x + p.width >= canvas.width) p.drift *= -1;
 
         if (assetsLoaded && assets[p.type]) {
             ctx.drawImage(assets[p.type], p.x, p.y, p.width, p.height);
         }
 
-        // Collision (To'qnashuv)
+        // To'qnashuv
         if (p.y + p.height >= basket.y + 10 && p.y <= basket.y + 50 &&
             p.x + p.width >= basket.x && p.x <= basket.x + basket.width) {
 
-            // Savat effekt (Juice)
-            basket.width = basket.originalWidth + 15;
-            setTimeout(() => basket.width = basket.originalWidth, 100);
-
             if (p.type === 'bomb') {
                 if (shieldActive) {
-                    shieldActive = false; // Qalqon qutqaradi
+                    shieldActive = false; // Qalqon yo'qoladi
                 } else {
                     lives--;
                     combo = 0;
@@ -137,16 +142,15 @@ function update() {
                 if (p.type === 'tomato') score += 10 + (Math.floor(combo / 5) * 5);
                 else if (p.type === 'brand') { score += 100; currentDiamonds += 1; }
                 else if (p.type === 'snow') slowModeTimer = 400;
-                else if (p.type === 'magnet') magnetTimer = 420; // 7 sek
+                else if (p.type === 'magnet') magnetTimer = 420;
                 else if (p.type === 'shield') shieldActive = true;
             }
 
             items.splice(i, 1); i--;
-            if (lives <= 0) gameOver();
+            if (lives <= 0) { gameOver(); break; }
             continue;
         }
 
-        // Pastga tushib ketish
         if (p.y > canvas.height) {
             if (p.type === 'tomato' || p.type === 'brand') {
                 lives--;
@@ -154,11 +158,13 @@ function update() {
                 shakeTimer = 10;
             }
             items.splice(i, 1); i--;
-            if (lives <= 0) gameOver();
+            if (lives <= 0) { gameOver(); break; }
         }
     }
 
+    // 4. Oldingi holatni qaytarish
     ctx.restore();
+
     if (!isGameOver) {
         drawUI();
         requestAnimationFrame(update);
