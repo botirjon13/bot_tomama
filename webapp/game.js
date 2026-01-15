@@ -213,33 +213,52 @@ function gameOver() {
     isGameOver = true;
     clearInterval(spawnInterval);
 
+    // 1. LocalStorage dan random profilni olish (index.html da yaratilgan)
+    const localUserData = JSON.parse(localStorage.getItem('tomama_user_2026') || '{}');
     const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
+    
+    // 2. Serverga yuboriladigan ma'lumotlar
     const gameData = {
         telegram_id: tgUser?.id || 0,
-        username: tgUser?.username || tgUser?.first_name || "O'yinchi",
+        nickname: localUserData.nickname || "Noma'lum Pomidor",
+        avatar_url: localUserData.avatar || "assaets/avatars/1.png",
         score: score
     };
 
-    fetch('oyinbackent-production.up.railway.app', {
+    // 3. Serverga saqlash
+    fetch(`${SERVER_URL}/save`, { // SERVER_URL index.html da aniqlangan
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(gameData)
-    }).catch(e => console.log("Saqlashda xato"));
+    })
+    .then(res => res.json())
+    .then(data => {
+        console.log("Natija saqlandi!");
+    })
+    .catch(e => console.error("Saqlashda xato:", e));
 
+    // 4. Rekordlarni yangilash
     totalDiamonds += currentDiamonds;
     localStorage.setItem('totalDiamonds', totalDiamonds);
-    if (score > highScore) localStorage.setItem('highScore', score);
+    if (score > (localStorage.getItem('highScore') || 0)) {
+        localStorage.setItem('highScore', score);
+    }
 
+    // 5. Telegram tugmasini chiqarish
     if (window.Telegram?.WebApp) {
         const tg = window.Telegram.WebApp;
-        tg.MainButton.setText(`O'YIN TUGADI: ${score} 🍅 | QAYTA O'YNASH`);
+        tg.MainButton.setText(`NATIJA: ${score} 🍅 | REYTINGGA QAYTISH`);
         tg.MainButton.show();
-        tg.MainButton.onClick(() => window.location.reload());
+        tg.MainButton.onClick(() => {
+            tg.MainButton.hide();
+            window.location.reload(); // Sahifani yangilab menyuga qaytadi
+        });
     } else {
-        alert("O'yin tugadi! Ball: " + score);
+        alert(`O'yin tugadi! Ball: ${score}`);
         window.location.reload();
     }
 }
+
 
 window.startGameLoop = function() {
     isGameOver = false; score = 0; lives = 3; currentDiamonds = 0; combo = 0;
