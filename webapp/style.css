@@ -111,5 +111,16 @@ body, html {
     50% { transform: rotate(180deg) translate(40px, 60px); }
     to { transform: rotate(360deg) translate(0,0); }
 }
+/* Fon elementlari aylanib turishi uchun */
+@keyframes rotateItem {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.floating-item {
+    animation: rotateItem 10s linear infinite;
+    opacity: 0.4;
+    pointer-events: none;
+}
 
 .game-logo { width: 200px; margin-bottom: 20px; filter: drop-shadow(0 10px 20px rgba(0,0,0,0.3)); }
