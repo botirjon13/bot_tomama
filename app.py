@@ -10,7 +10,7 @@ TOKEN = os.environ.get("BOT_TOKEN")
 if not TOKEN:
     raise RuntimeError("BOT_TOKEN environment variable not set")
 
-DOMAIN = "https://bot-telegram-production-d731.up.railway.app/"
+DOMAIN = "https://bot-telegram-production-d731.up.railway.app"
 WEBHOOK_PATH = f"/{TOKEN}"
 WEBHOOK_URL = DOMAIN + WEBHOOK_PATH
 
@@ -27,11 +27,14 @@ def main_keyboard():
     markup = telebot.types.ReplyKeyboardMarkup(resize_keyboard=True)
     markup.row("🔹 Korxona Haqida", "📞 Aloqa")
     markup.row("🌐 Saytga O'tish")
-    webapp_url = DOMAIN + "/game"
+    
+    # Havolani aniq va to'g'ri nom bilan yasaymiz
+    current_game_url = f"{DOMAIN}/game"
+    
     markup.row(
         telebot.types.KeyboardButton(
             "🎮 Tomama O‘yini",
-            web_app=telebot.types.WebAppInfo(url=web_app_url)
+            web_app=telebot.types.WebAppInfo(url=current_game_url)
         )
     )
     return markup
