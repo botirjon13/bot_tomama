@@ -156,6 +156,13 @@
         document.getElementById('mainMenu').classList.remove('hidden');
         updateUIStats();
     }
+    // O'yin tugagandan keyin menyuga qaytish uchun yordamchi funksiya
+    function backToMenu() {
+        document.getElementById('gameCanvas').classList.add('hidden');
+        document.getElementById('mainMenu').classList.remove('hidden');
+        tg?.MainButton.hide();
+        updateUIStats();
+    }
 </script>
 
 <!-- O'yin logikasi -->
