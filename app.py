@@ -23,16 +23,19 @@ PORT = int(os.environ.get("PORT", 8080))
 # KLAWIATURA
 # =======================
 
+# Измените переменную WEB_APP_URL
+WEB_APP_URL = "https://t.me/choose24bot/tomama"
+
 def main_keyboard():
     markup = telebot.types.ReplyKeyboardMarkup(resize_keyboard=True)
     markup.row("🔹 Korxona Haqida", "📞 Aloqa")
     markup.row("🌐 Saytga O'tish")
-    
-    webapp_url = DOMAIN + "/game"
+
+    # Теперь эта кнопка будет открывать Mini App по вашей короткой ссылке
     markup.row(
         telebot.types.KeyboardButton(
             "🎮 Tomama O‘yini",
-            web_app=telebot.types.WebAppInfo(url=webapp_url)
+            web_app=telebot.types.WebAppInfo(url=WEB_APP_URL)
         )
     )
     return markup
