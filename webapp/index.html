@@ -3,10 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Tomama 2026 - Adrenalin Edition</title>
+    <title>Tomama 2026 - Random Edition</title>
     <!-- Telegram SDK -->
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="telegram.org"></script>
     <link rel="stylesheet" href="style.css">
+    <style>
+        .avatar-img { width: 36px; height: 36px; border-radius: 50%; border: 2px solid #ff4d4d; margin-right: 10px; }
+        .player-name { font-weight: bold; color: #fff; }
+        .my-profile { background: rgba(255, 255, 255, 0.1); padding: 10px; border-radius: 10px; margin-bottom: 15px; display: flex; align-items: center; }
+    </style>
 </head>
 <body>
 
@@ -22,6 +27,15 @@
     <div class="menu-box">
         <img src="assaets/logo.png" class="game-logo" alt="Tomama Logo">
         
+        <!-- PROFIL (RANDOM ISM VA AVATAR) -->
+        <div id="userProfile" class="my-profile">
+            <img id="myAvatar" src="" class="avatar-img">
+            <div style="text-align: left;">
+                <span id="myNickname" class="player-name">Yuklanmoqda...</span><br>
+                <small style="color: #00f2ff;">Sizning profilingiz</small>
+            </div>
+        </div>
+
         <div id="recordBox">
             <span style="opacity: 0.7; font-size: 0.8em;">ENG YAXSHI NATIJA</span><br>
             <strong id="personalBest">0</strong><br>
@@ -70,15 +84,38 @@
         tg.BackButton.onClick(() => hideAllMenus());
     }
 
-    // Yangilangan UI stats
+    // --- RANDOM PROFIL YARATISH ---
+    function getOrGenerateUser() {
+        let localUser = localStorage.getItem('tomama_user_2026');
+        if (!localUser) {
+            const adjectives = ["Chaqqon", "Tezkor", "Olovli", "Super", "Mantiqiy", "Yulduzli", "Oltin", "Botir"];
+            const nouns = ["Pomidor", "Tomama", "Chempion", "Usta", "Sardor", "Lochin", "Pahlavon"];
+            
+            const randomName = adjectives[Math.floor(Math.random() * adjectives.length)] + 
+                               " " + nouns[Math.floor(Math.random() * nouns.length)];
+            
+            // 1 dan 20 gacha bo'lgan rasmlar (assaets/avatars/1.png ...)
+            const randomAvatar = `assaets/avatars/${Math.floor(Math.random() * 20) + 1}.png`;
+            
+            const newUser = { nickname: randomName, avatar: randomAvatar };
+            localStorage.setItem('tomama_user_2026', JSON.stringify(newUser));
+            return newUser;
+        }
+        return JSON.parse(localUser);
+    }
+
+    // UI stats yangilash
     function updateUIStats() {
+        const user = getOrGenerateUser();
+        document.getElementById('myNickname').innerText = user.nickname;
+        document.getElementById('myAvatar').src = user.avatar;
         document.getElementById('personalBest').innerText = localStorage.getItem('highScore') || 0;
         document.getElementById('totalDiamonds').innerText = localStorage.getItem('totalDiamonds') || 0;
     }
 
     window.addEventListener('load', updateUIStats);
 
-    // --- Telegram avatar bilan leaderboard ---
+    // --- LEADERBOARDNI YUKLASH ---
     async function loadLeaderboard() {
         const list = document.getElementById('rankingList');
         list.innerHTML = "<p style='text-align:center;'>Yuklanmoqda...</p>";
@@ -95,28 +132,18 @@
             }
 
             data.forEach((player, index) => {
-                const medal =
-                    index === 0 ? "🥇" :
-                    index === 1 ? "🥈" :
-                    index === 2 ? "🥉" :
-                    `${index + 1}.`;
-
-                const avatar = player.photo
-                    ? `<img src="${player.photo}" style="width:36px;height:36px;border-radius:50%;margin-right:10px;">`
-                    : `<div style="width:36px;height:36px;border-radius:50%;background:#444;margin-right:10px;"></div>`;
+                const medal = index === 0 ? "🥇" : index === 1 ? "🥈" : index === 2 ? "🥉" : `${index + 1}.`;
+                
+                // Backend'dan nickname va avatar_url kelishi kerak
+                const nickname = player.nickname || "Noma'lum";
+                const avatar = player.avatar_url || "assaets/avatars/1.png";
 
                 const playerRow = `
-                    <div style="
-                        display:flex;
-                        justify-content:space-between;
-                        align-items:center;
-                        padding:10px;
-                        border-bottom:1px solid rgba(255,255,255,0.1);
-                    ">
-                        <div style="display:flex;align-items:center;">
-                            <span style="margin-right:8px;">${medal}</span>
-                            ${avatar}
-                            <span>@${player.username}</span>
+                    <div style="display:flex; justify-content:space-between; align-items:center; padding:10px; border-bottom:1px solid rgba(255,255,255,0.1);">
+                        <div style="display:flex; align-items:center;">
+                            <span style="margin-right:8px; width:20px;">${medal}</span>
+                            <img src="${avatar}" style="width:32px; height:32px; border-radius:50%; margin-right:10px; border:1px solid #ff4d4d;">
+                            <span>${nickname}</span>
                         </div>
                         <strong style="color:#ffd700;">${player.score} 🍅</strong>
                     </div>
@@ -124,14 +151,13 @@
                 list.innerHTML += playerRow;
             });
         } catch (e) {
-            list.innerHTML = "<p style='color: #ff5252; text-align:center;'>Reytingni yuklab bo'lmadi.<br><small>Server ulanmagan</small></p>";
-            console.error("Leaderboard error:", e);
+            list.innerHTML = "<p style='color: #ff5252; text-align:center;'>Reytingni yuklab bo'lmadi.</p>";
         }
     }
 
     // --- MENYU FUNKSIYALARI ---
     function startGame() {
-        tg?.HapticFeedback.impactOccurred('medium');
+        if (tg?.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
         document.getElementById('mainMenu').classList.add('hidden');
         document.getElementById('gameCanvas').classList.remove('hidden');
         if (window.startGameLoop) window.startGameLoop();
@@ -156,16 +182,8 @@
         document.getElementById('mainMenu').classList.remove('hidden');
         updateUIStats();
     }
-    // O'yin tugagandan keyin menyuga qaytish uchun yordamchi funksiya
-    function backToMenu() {
-        document.getElementById('gameCanvas').classList.add('hidden');
-        document.getElementById('mainMenu').classList.remove('hidden');
-        tg?.MainButton.hide();
-        updateUIStats();
-    }
 </script>
 
-<!-- O'yin logikasi -->
 <script src="game.js"></script>
 </body>
 </html>
