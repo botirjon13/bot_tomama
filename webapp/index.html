@@ -5,17 +5,17 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>Tomama 2026 - Random Edition</title>
 
-  <!-- Telegram SDK -->
-  <script src="telegram.org"></script>
+  <!-- ✅ Telegram SDK HEAD ichida -->
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
   <link rel="stylesheet" href="style.css">
+
   <style>
     .avatar-img { width: 36px; height: 36px; border-radius: 50%; border: 2px solid #ff4d4d; margin-right: 10px; }
     .player-name { font-weight: bold; color: #fff; }
     .my-profile { background: rgba(255, 255, 255, 0.1); padding: 10px; border-radius: 10px; margin-bottom: 15px; display: flex; align-items: center; }
-    .guest-pill { font-size: 11px; padding: 3px 8px; border-radius: 999px; background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.18); margin-left: 8px; }
+    .guest-warn { color:#ffcc00; font-size:12px; margin-top:6px; opacity:0.9; display:none; }
   </style>
-   <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
 <body>
 
@@ -31,18 +31,22 @@
     <div class="menu-box">
       <img src="assaets/logo.png" class="game-logo" alt="Tomama Logo">
 
+      <!-- PROFIL -->
       <div id="userProfile" class="my-profile">
-        <img id="myAvatar" src="" class="avatar-img">
-        <div style="text-align: left;">
+        <img id="myAvatar" src="assaets/avatars/1.png" class="avatar-img">
+        <div style="text-align:left;">
           <span id="myNickname" class="player-name">Yuklanmoqda...</span><br>
-          <small id="myMode" style="color: #00f2ff;">Sizning profilingiz</small>
+          <small style="color:#00f2ff;">Sizning profilingiz</small>
+          <div id="guestWarn" class="guest-warn">
+            Siz Guest sifatida o‘ynayapsiz. Reytingni saqlash uchun Telegram orqali kiring.
+          </div>
         </div>
       </div>
 
       <div id="recordBox">
-        <span style="opacity: 0.7; font-size: 0.8em;">ENG YAXSHI NATIJA</span><br>
+        <span style="opacity:0.7; font-size:0.8em;">ENG YAXSHI NATIJA</span><br>
         <strong id="personalBest">0</strong><br>
-        <span style="color: #00f2ff; font-weight: bold; font-size: 1.1em;">💎 <span id="totalDiamonds">0</span></span>
+        <span style="color:#00f2ff; font-weight:bold; font-size:1.1em;">💎 <span id="totalDiamonds">0</span></span>
       </div>
 
       <button onclick="startGame()">▶️ O'yinni boshlash</button>
@@ -51,151 +55,144 @@
     </div>
   </div>
 
-  <!-- REYTING MENYUSI -->
+  <!-- REYTING -->
   <div id="rankingMenu" class="menu-container hidden">
     <div class="menu-box">
-      <h2 style="color: white; margin-top: 0; margin-bottom: 20px;">🏆 Top-10 Reyting</h2>
-      <div id="rankingList" style="color: white; min-height: 150px; text-align: left; overflow-y: auto; max-height: 250px;">
+      <h2 style="color:white; margin-top:0; margin-bottom:20px;">🏆 Top-10 Reyting</h2>
+      <div id="rankingList" style="color:white; min-height:150px; text-align:left; overflow-y:auto; max-height:250px;">
         Yuklanmoqda...
       </div>
-      <button class="back-btn" style="margin-top: 20px;" onclick="hideAllMenus()">⬅️ Ortga</button>
+      <button class="back-btn" style="margin-top:20px;" onclick="hideAllMenus()">⬅️ Ortga</button>
     </div>
   </div>
 
-  <!-- KUPONLAR MENYUSI -->
+  <!-- KUPONLAR -->
   <div id="couponsMenu" class="menu-container hidden">
     <div class="menu-box">
-      <h2 style="color: white; margin-top: 0;">🎫 Kuponlarim</h2>
-      <div id="couponList" style="color: white; margin-bottom: 20px;">
-        <p style="opacity: 0.6;">Hozircha kuponlar yo‘q</p>
+      <h2 style="color:white; margin-top:0;">🎫 Kuponlarim</h2>
+      <div id="couponList" style="color:white; margin-bottom:20px;">
+        <p style="opacity:0.6;">Hozircha kuponlar yo‘q</p>
       </div>
       <button class="back-btn" onclick="hideAllMenus()">⬅️ Ortga</button>
     </div>
   </div>
 
-  <!-- O'YIN MAYDONI -->
+  <!-- O'YIN -->
   <canvas id="gameCanvas" class="hidden"></canvas>
 
   <script>
+    // ✅ Backend URL global bo‘lsin (game.js ham ishlatadi)
+    window.SERVER_URL = "https://oyinbackent-production.up.railway.app";
+
     const tg = window.Telegram?.WebApp;
-    const SERVER_URL = 'https://oyinbackent-production.up.railway.app';
 
     if (tg) {
       tg.ready();
       tg.expand();
-      tg.setHeaderColor('#81d4fa');
+      tg.setHeaderColor("#81d4fa");
       tg.BackButton.onClick(() => hideAllMenus());
     }
 
-    // Random profil
     function getOrGenerateUser() {
-      let localUser = localStorage.getItem('tomama_user_2026');
+      let localUser = localStorage.getItem("tomama_user_2026");
       if (!localUser) {
-        const adjectives = ["Chaqqon", "Tezkor", "Olovli", "Super", "Mantiqiy", "Yulduzli", "Oltin", "Botir"];
-        const nouns = ["Pomidor", "Tomama", "Chempion", "Usta", "Sardor", "Lochin", "Pahlavon"];
-        const randomName = adjectives[Math.floor(Math.random() * adjectives.length)] + " " + nouns[Math.floor(Math.random() * nouns.length)];
-        const randomAvatar = `assaets/avatars/${Math.floor(Math.random() * 20) + 1}.png`;
+        const adjectives = ["Chaqqon","Tezkor","Olovli","Super","Mantiqiy","Yulduzli","Oltin","Botir"];
+        const nouns = ["Pomidor","Tomama","Chempion","Usta","Sardor","Lochin","Pahlavon"];
+        const randomName = adjectives[Math.floor(Math.random()*adjectives.length)] + " " + nouns[Math.floor(Math.random()*nouns.length)];
+        const randomAvatarId = Math.floor(Math.random() * 20) + 1;
+        const randomAvatar = `assaets/avatars/${randomAvatarId}.png`;
         const newUser = { nickname: randomName, avatar: randomAvatar };
-        localStorage.setItem('tomama_user_2026', JSON.stringify(newUser));
+        localStorage.setItem("tomama_user_2026", JSON.stringify(newUser));
         return newUser;
       }
       return JSON.parse(localUser);
     }
 
     function getOrCreateGuestId() {
-      let gid = localStorage.getItem("tomama_guest_id");
-      if (!gid) {
-        gid = (crypto.randomUUID ? crypto.randomUUID() : ("g_" + Math.random().toString(16).slice(2)));
-        localStorage.setItem("tomama_guest_id", gid);
+      let id = localStorage.getItem("tomama_guest_id");
+      if (!id) {
+        id = (crypto?.randomUUID ? crypto.randomUUID() : ("g_" + Math.random().toString(16).slice(2))) + "_" + Date.now();
+        localStorage.setItem("tomama_guest_id", id);
       }
-      return gid;
+      return id;
     }
 
-    function showGuestWarning() {
-      let el = document.getElementById("guestWarning");
-      if (!el) {
-        el = document.createElement("div");
-        el.id = "guestWarning";
-        el.style.margin = "12px 0";
-        el.style.padding = "12px";
-        el.style.borderRadius = "14px";
-        el.style.background = "rgba(255, 82, 82, 0.15)";
-        el.style.border = "1px solid rgba(255, 82, 82, 0.35)";
-        el.style.color = "white";
-        el.style.fontSize = "13px";
-        el.style.lineHeight = "1.35";
-        el.innerHTML = "Siz hozir <b>Guest</b> sifatida o‘ynayapsiz. Reytingda hisob <b>saqlanadi</b>, lekin haqiqiy profil uchun o‘yinga <b>Telegram</b> orqali kirish tavsiya etiladi.";
-        const box = document.getElementById("recordBox");
-        box.parentNode.insertBefore(el, box);
-      }
+    function showGuestWarning(show) {
+      const el = document.getElementById("guestWarn");
+      if (!el) return;
+      el.style.display = show ? "block" : "none";
     }
-
-  async function autoRegister() {
-  const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
-  const localUser = getOrGenerateUser();
-
-  const avatarMatch = String(localUser.avatar || "").match(/avatars\/(\d+)\.png/i);
-  const avatar_id = avatarMatch ? parseInt(avatarMatch[1], 10) : 1;
-
-  let payload;
-
-  if (tgUser?.id) {
-    payload = {
-      mode: "telegram",
-      telegram_id: tgUser.id,
-      username: tgUser.username ? `@${tgUser.username}` : (tgUser.first_name || localUser.nickname),
-      avatar_id
-    };
-  } else {
-    payload = {
-      mode: "guest",
-      guest_id: getOrCreateGuestId(),
-      username: localUser.nickname,
-      avatar_id
-    };
-    showGuestWarning();
-  }
-
-  const res = await fetch(`${SERVER_URL}/register`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload)
-  });
-
-  const data = await res.json();
-
-  if (data?.ok) {
-    localStorage.setItem("tomama_identity", data.user.identity);
-    localStorage.setItem("tomama_is_guest", String(data.user.is_guest));
-  } else {
-    console.error("Register failed:", data);
-  }
-}
 
     function updateUIStats() {
       const user = getOrGenerateUser();
-      document.getElementById('myNickname').innerText = user.nickname;
-      document.getElementById('myAvatar').src = user.avatar;
-      document.getElementById('personalBest').innerText = localStorage.getItem('highScore') || 0;
-      document.getElementById('totalDiamonds').innerText = localStorage.getItem('totalDiamonds') || 0;
+      document.getElementById("myNickname").innerText = user.nickname;
+      document.getElementById("myAvatar").src = user.avatar;
+      document.getElementById("personalBest").innerText = localStorage.getItem("highScore") || 0;
+      document.getElementById("totalDiamonds").innerText = localStorage.getItem("totalDiamonds") || 0;
     }
 
-    window.addEventListener('load', async () => {
-      updateUIStats();
-      await autoRegister();
-    });
+    async function autoRegister() {
+      try {
+        const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
+        const localUser = getOrGenerateUser();
 
+        const avatarMatch = String(localUser.avatar || "").match(/avatars\/(\d+)\.png/i);
+        const avatar_id = avatarMatch ? parseInt(avatarMatch[1], 10) : 1;
+
+        let payload;
+
+        if (tgUser?.id) {
+          payload = {
+            mode: "telegram",
+            telegram_id: tgUser.id,
+            username: tgUser.username ? `@${tgUser.username}` : (tgUser.first_name || localUser.nickname),
+            avatar_id
+          };
+          showGuestWarning(false);
+        } else {
+          payload = {
+            mode: "guest",
+            guest_id: getOrCreateGuestId(),
+            username: localUser.nickname,
+            avatar_id
+          };
+          showGuestWarning(true);
+        }
+
+        const res = await fetch(`${window.SERVER_URL}/register`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+
+        const data = await res.json();
+
+        if (data?.ok) {
+          localStorage.setItem("tomama_identity", data.user.identity);
+          localStorage.setItem("tomama_is_guest", String(data.user.is_guest));
+          return data.user;
+        } else {
+          console.error("Register failed:", data);
+          return null;
+        }
+      } catch (e) {
+        console.error("autoRegister error:", e);
+        return null;
+      }
+    }
+
+    // Leaderboard
     async function loadLeaderboard() {
-      const list = document.getElementById('rankingList');
+      const list = document.getElementById("rankingList");
       list.innerHTML = "<p style='text-align:center;'>Yuklanmoqda...</p>";
 
       try {
-        const res = await fetch(`${SERVER_URL}/leaderboard`);
-        if (!res.ok) throw new Error('Server xatosi');
+        const res = await fetch(`${window.SERVER_URL}/leaderboard`);
+        if (!res.ok) throw new Error("Server xatosi");
         const data = await res.json();
 
         list.innerHTML = "";
-        if (data.length === 0) {
+        if (!data.length) {
           list.innerHTML = "<p style='text-align:center;'>Hozircha rekordlar yo'q</p>";
           return;
         }
@@ -203,54 +200,65 @@
         data.forEach((player, index) => {
           const medal = index === 0 ? "🥇" : index === 1 ? "🥈" : index === 2 ? "🥉" : `${index + 1}.`;
           const nickname = player.nickname || "Noma'lum";
-          const avatarId = player.avatar_id || 1;
-          const avatar = `assaets/avatars/${avatarId}.png`;
-          const guestBadge = player.is_guest ? `<span class="guest-pill">Guest</span>` : ``;
+          const avatar = player.avatar_url || "assaets/avatars/1.png";
 
-          const playerRow = `
+          const row = `
             <div style="display:flex; justify-content:space-between; align-items:center; padding:10px; border-bottom:1px solid rgba(255,255,255,0.1);">
               <div style="display:flex; align-items:center;">
                 <span style="margin-right:8px; width:20px;">${medal}</span>
                 <img src="${avatar}" style="width:32px; height:32px; border-radius:50%; margin-right:10px; border:1px solid #ff4d4d;">
                 <span>${nickname}</span>
-                ${guestBadge}
               </div>
               <strong style="color:#ffd700;">${player.score} 🍅</strong>
             </div>
           `;
-          list.innerHTML += playerRow;
+          list.innerHTML += row;
         });
       } catch (e) {
-        list.innerHTML = "<p style='color: #ff5252; text-align:center;'>Reytingni yuklab bo'lmadi.</p>";
+        list.innerHTML = "<p style='color:#ff5252; text-align:center;'>Reytingni yuklab bo‘lmadi.</p>";
       }
     }
 
+    // Menyu
     function startGame() {
-      if (tg?.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
-      document.getElementById('mainMenu').classList.add('hidden');
-      document.getElementById('gameCanvas').classList.remove('hidden');
+      // Registratsiya xato bersa ham o‘yin boshlansin
+      autoRegister();
+
+      document.getElementById("mainMenu").classList.add("hidden");
+      document.getElementById("gameCanvas").classList.remove("hidden");
+
       if (window.startGameLoop) window.startGameLoop();
+      else console.error("startGameLoop topilmadi (game.js yuklanganmi?)");
     }
 
     function showRanking() {
       tg?.BackButton.show();
-      document.getElementById('mainMenu').classList.add('hidden');
-      document.getElementById('rankingMenu').classList.remove('hidden');
+      document.getElementById("mainMenu").classList.add("hidden");
+      document.getElementById("rankingMenu").classList.remove("hidden");
       loadLeaderboard();
     }
 
     function showCoupons() {
       tg?.BackButton.show();
-      document.getElementById('mainMenu').classList.add('hidden');
-      document.getElementById('couponsMenu').classList.remove('hidden');
+      document.getElementById("mainMenu").classList.add("hidden");
+      document.getElementById("couponsMenu").classList.remove("hidden");
     }
 
     function hideAllMenus() {
       tg?.BackButton.hide();
-      document.querySelectorAll('.menu-container').forEach(m => m.classList.add('hidden'));
-      document.getElementById('mainMenu').classList.remove('hidden');
+      document.querySelectorAll(".menu-container").forEach(m => m.classList.add("hidden"));
+      document.getElementById("mainMenu").classList.remove("hidden");
       updateUIStats();
     }
+
+    // Sahifa yuklanganda
+    window.addEventListener("load", () => {
+      updateUIStats();
+      autoRegister(); // fon rejimida
+    });
   </script>
+
+  <!-- game.js eng oxirida -->
+  <script src="game.js"></script>
 </body>
 </html>
