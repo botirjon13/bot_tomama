@@ -611,8 +611,8 @@
       .replaceAll("'", "&#039;");
   }
 
-    // Menu Functions
-    async function downloadCertificatePNG({ title, code, qrDataUrl }) {
+   // Certificate Download (Telegram-friendly) + mark as used after download
+async function downloadCertificatePNG({ title, code, qrDataUrl, token }) {
   // QR rasmni yuklab, canvasga chizamiz
   const qrImg = await loadImage(qrDataUrl);
 
@@ -677,12 +677,68 @@
   c.font = "600 16px Arial";
   c.fillText("Tomama 2026", 110, 540);
 
-  // Download
+  const dataUrl = canvas.toDataURL("image/png");
+
+  // 1) Telegram WebApp: download emas, rasmni ochib beramiz
+  if (window.Telegram?.WebApp) {
+    const win = window.open();
+    if (win) {
+      win.document.write(`
+        <html>
+          <head>
+            <title>Tomama Certificate</title>
+            <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+          </head>
+          <body style="margin:0;background:#000;display:flex;align-items:center;justify-content:center;">
+            <img src="${dataUrl}" style="width:100%;height:auto;" />
+          </body>
+        </html>
+      `);
+      win.document.close();
+    } else {
+      // popup blok bo'lsa
+      window.location.href = dataUrl;
+    }
+
+    // 2) Yuklandi deb hisoblab, USED ga o'tkazamiz (serverga signal)
+    // token bo'lsa ishlaydi
+    if (token) {
+      try {
+        await fetch(`${SERVER_URL}/coupons/mark-used`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ token })
+        });
+      } catch (e) {
+        console.warn("mark-used failed:", e);
+      }
+    }
+
+    return;
+  }
+
+  // 3) Oddiy brauzer: yuklab oladi
   const a = document.createElement("a");
-  a.href = canvas.toDataURL("image/png");
+  a.href = dataUrl;
   a.download = `tomama-certificate-${code}.png`;
+  document.body.appendChild(a);
   a.click();
+  document.body.removeChild(a);
+
+  // 4) Brauzerda ham USED ga o'tkazamiz
+  if (token) {
+    try {
+      await fetch(`${SERVER_URL}/coupons/mark-used`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token })
+      });
+    } catch (e) {
+      console.warn("mark-used failed:", e);
+    }
+  }
 }
+
 
 function roundRect(ctx, x, y, w, h, r) {
   const rr = Math.min(r, w / 2, h / 2);
