@@ -15,6 +15,53 @@
     .player-name { font-weight: bold; color: #fff; }
     .my-profile { background: rgba(255, 255, 255, 0.1); padding: 10px; border-radius: 10px; margin-bottom: 15px; display: flex; align-items: center; }
     .warn-box { margin-top:10px; padding:10px; border-radius:12px; background: rgba(255, 183, 77, 0.12); border: 1px solid rgba(255,183,77,0.35); color:#ffcc80; font-size:12px; line-height:1.4; display:none; }
+
+    /* Name modal */
+    .modal-wrap{
+      position:fixed; inset:0; z-index:10000;
+      background:rgba(0,0,0,0.75);
+      display:flex; align-items:center; justify-content:center;
+      padding:18px;
+    }
+    .modal-card{
+      width:100%; max-width:420px;
+      background:rgba(255,255,255,0.10);
+      border:1px solid rgba(255,255,255,0.18);
+      border-radius:18px;
+      padding:16px;
+      color:#fff;
+      backdrop-filter: blur(12px);
+    }
+    .modal-title{ font-weight:900; font-size:16px; margin:0; }
+    .modal-sub{ opacity:0.8; font-size:12px; margin-top:6px; line-height:1.4; }
+    .modal-input{
+      width:100%; margin-top:12px;
+      padding:12px 12px;
+      border-radius:12px;
+      border:1px solid rgba(255,255,255,0.18);
+      background:rgba(255,255,255,0.08);
+      color:#fff; font-weight:800;
+      outline:none;
+    }
+    .modal-row{ display:flex; gap:10px; margin-top:12px; }
+    .btn{
+      width:100%;
+      padding:12px;
+      border-radius:12px;
+      border:1px solid rgba(255,255,255,0.12);
+      background:rgba(255,255,255,0.08);
+      color:#fff;
+      font-weight:900;
+      cursor:pointer;
+    }
+    .btn-primary{
+      border:none;
+      background: linear-gradient(135deg, #ff5252 0%, #b71c1c 100%);
+    }
+    .btn:disabled{
+      cursor:not-allowed;
+      opacity:0.6;
+    }
   </style>
 </head>
 <body>
@@ -88,11 +135,23 @@
     // Backend URL
     const SERVER_URL = "https://oyinbackent-production.up.railway.app";
 
+    // global flags
+    window.TOMAMA_READY = false;
+
     if (tg) {
       tg.ready();
       tg.expand();
       tg.setHeaderColor("#81d4fa");
       tg.BackButton.onClick(() => hideAllMenus());
+    }
+
+    function showGuestWarning() {
+      const el = document.getElementById("guestWarn");
+      if (el) el.style.display = "block";
+    }
+    function hideGuestWarning() {
+      const el = document.getElementById("guestWarn");
+      if (el) el.style.display = "none";
     }
 
     // ------------------------------
@@ -108,7 +167,7 @@
     }
 
     // ------------------------------
-    // Avatardan avatar_id olish (assaets/avatars/12.png -> 12)
+    // Avatar ID
     // ------------------------------
     function extractAvatarId(avatarPath) {
       const m = String(avatarPath || "").match(/avatars\/(\d+)\.png/i);
@@ -116,58 +175,134 @@
     }
 
     // ------------------------------
-    // Random profil: faqat guest yoki username yo‘q bo‘lsa ishlaydi
+    // Local random avatar (faqat avatar uchun)
     // ------------------------------
-    function getOrGenerateUser() {
-      let localUser = localStorage.getItem("tomama_user_2026");
-      if (!localUser) {
-        const adjectives = ["Chaqqon", "Tezkor", "Olovli", "Super", "Mantiqiy", "Yulduzli", "Oltin", "Botir"];
-        const nouns = ["Pomidor", "Tomama", "Chempion", "Usta", "Sardor", "Lochin", "Pahlavon"];
-        const randomName = adjectives[Math.floor(Math.random() * adjectives.length)] + " " + nouns[Math.floor(Math.random() * nouns.length)];
-        const randomAvatar = `assaets/avatars/${Math.floor(Math.random() * 20) + 1}.png`;
-        const newUser = { nickname: randomName, avatar: randomAvatar };
-        localStorage.setItem("tomama_user_2026", JSON.stringify(newUser));
-        return newUser;
-      }
-      try { return JSON.parse(localUser); } catch { return { nickname:"Pomidor", avatar:"assaets/avatars/1.png" }; }
-    }
+    function getOrPickAvatar() {
+      const stored = localStorage.getItem("tomama_avatar_id");
+      if (stored) return Math.max(1, Math.min(50, parseInt(stored, 10) || 1));
 
-    function showGuestWarning() {
-      const el = document.getElementById("guestWarn");
-      if (el) el.style.display = "block";
-    }
-    function hideGuestWarning() {
-      const el = document.getElementById("guestWarn");
-      if (el) el.style.display = "none";
+      const randomId = Math.floor(Math.random() * 20) + 1;
+      localStorage.setItem("tomama_avatar_id", String(randomId));
+      return randomId;
     }
 
     // ------------------------------
-    // AUTO REGISTER
+    // Name storage (endilikda random emas)
+    // ------------------------------
+    function getSavedName() {
+      return String(localStorage.getItem("tomama_username") || "").trim();
+    }
+    function setSavedName(name) {
+      const clean = String(name || "").trim().slice(0, 48);
+      if (clean) localStorage.setItem("tomama_username", clean);
+      return clean;
+    }
+
+    function suggestNameFromTelegramOrFallback() {
+      const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
+      if (tgUser?.username) return `@${tgUser.username}`;
+      if (tgUser?.first_name) return tgUser.first_name;
+      return "";
+    }
+
+    // ------------------------------
+    // Name modal (1-marta kirganda)
+    // ------------------------------
+    async function ensureNameModal() {
+      let name = getSavedName();
+      if (name) return name;
+
+      const suggested = suggestNameFromTelegramOrFallback();
+      const avatarId = getOrPickAvatar();
+
+      return await new Promise((resolve) => {
+        const wrap = document.createElement("div");
+        wrap.className = "modal-wrap";
+        wrap.id = "nameModal";
+        wrap.innerHTML = `
+          <div class="modal-card">
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;">
+              <div>
+                <p class="modal-title">Ismingizni kiriting</p>
+                <div class="modal-sub">
+                  Bu ism reyting va kuponlarda ko‘rinadi. Keyin ham o‘zgartira olasiz.
+                </div>
+              </div>
+              <img src="assaets/avatars/${avatarId}.png" style="width:44px;height:44px;border-radius:50%;border:2px solid #ff4d4d;">
+            </div>
+
+            <input id="nameInput" class="modal-input" placeholder="Masalan: Ilhomjon" value="${suggested ? suggested.replace(/"/g,'&quot;') : ""}">
+
+            <div class="modal-row">
+              <button id="btnGuest" class="btn">Guest bo‘lib davom etish</button>
+              <button id="btnSave" class="btn btn-primary" disabled>Saqlash</button>
+            </div>
+
+            <div class="modal-sub" style="margin-top:10px;">
+              Agar Telegram WebApp orqali kirsangiz, reyting va kuponlar 100% ishlaydi.
+            </div>
+          </div>
+        `;
+        document.body.appendChild(wrap);
+
+        const input = wrap.querySelector("#nameInput");
+        const btnSave = wrap.querySelector("#btnSave");
+        const btnGuest = wrap.querySelector("#btnGuest");
+
+        const validate = () => {
+          const v = String(input.value || "").trim();
+          btnSave.disabled = v.length < 2;
+        };
+        validate();
+        input.addEventListener("input", validate);
+
+        btnSave.addEventListener("click", () => {
+          const v = setSavedName(input.value);
+          document.getElementById("nameModal")?.remove();
+          resolve(v);
+        });
+
+        btnGuest.addEventListener("click", () => {
+          // guest ham ism bilan kiradi (talabingiz bo‘yicha)
+          const v = setSavedName(input.value || "O‘yinchi");
+          document.getElementById("nameModal")?.remove();
+          resolve(v);
+        });
+      });
+    }
+
+    // ------------------------------
+    // AUTO REGISTER (DB bilan)
     // ------------------------------
     async function autoRegister() {
       const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
-      const localUser = getOrGenerateUser();
 
-      const avatar_id = extractAvatarId(localUser.avatar);
+      // ism majburiy
+      const chosenName = await ensureNameModal();
+
+      const avatar_id = getOrPickAvatar();
 
       let payload;
+      let mode = "guest";
 
       // Telegram orqali kirgan bo‘lsa
       if (tgUser?.id) {
         hideGuestWarning();
+        mode = "telegram";
         payload = {
-          mode: "telegram",
+          mode,
           telegram_id: tgUser.id,
-          username: tgUser.username ? `@${tgUser.username}` : (tgUser.first_name || localUser.nickname),
+          username: chosenName,
           avatar_id
         };
       } else {
         // Browser guest
         showGuestWarning();
+        mode = "guest";
         payload = {
-          mode: "guest",
+          mode,
           guest_id: getOrCreateGuestId(),
-          username: localUser.nickname,
+          username: chosenName,
           avatar_id
         };
       }
@@ -183,15 +318,20 @@
       if (data?.ok) {
         localStorage.setItem("tomama_identity", data.user.identity);
         localStorage.setItem("tomama_is_guest", String(data.user.is_guest));
-        // DB diamondsni localga sync
+
+        // diamonds sync
         if (typeof data.user.diamonds === "number") {
           localStorage.setItem("totalDiamonds", String(data.user.diamonds));
         }
-        // Nick/Avatar UI
-        localStorage.setItem("tomama_username", data.user.username || payload.username);
-        localStorage.setItem("tomama_avatar_id", String(data.user.avatar_id || avatar_id));
+
+        // username/avatar sync (DBdan kelganini olamiz)
+        if (data.user.username) localStorage.setItem("tomama_username", data.user.username);
+        if (typeof data.user.avatar_id === "number") localStorage.setItem("tomama_avatar_id", String(data.user.avatar_id));
+
+        window.TOMAMA_READY = true;
       } else {
         console.error("Register failed:", data);
+        window.TOMAMA_READY = false;
       }
     }
 
@@ -199,7 +339,7 @@
     // UI stats yangilash
     // ------------------------------
     function updateUIStats() {
-      const nickname = localStorage.getItem("tomama_username") || (getOrGenerateUser().nickname);
+      const nickname = localStorage.getItem("tomama_username") || "O‘yinchi";
       const avatarId = Number(localStorage.getItem("tomama_avatar_id") || 1);
       const avatarPath = `assaets/avatars/${avatarId}.png`;
 
@@ -334,15 +474,8 @@
                   Voucher Code: <b style="color:#ffd700;">${it.voucher_code}</b>
                 </div>
                 <div style="opacity:0.7;font-size:12px;margin-top:6px;">
-                  QR-ni ko‘rish uchun “Sertifikat” tugmasini bosing.
+                  QR skan bo‘lsa kupon “Used” bo‘ladi (bir martalik).
                 </div>
-                <button
-                  style="margin-top:10px;width:100%;padding:12px;border-radius:12px;border:1px solid rgba(255,255,255,0.12);
-                    background:rgba(255,255,255,0.08);color:#fff;font-weight:900;cursor:pointer;"
-                  onclick="showCertificate('${it.voucher_code}', null, '${it.title}')"
-                >
-                  Sertifikat
-                </button>
               </div>
             `;
           });
@@ -456,6 +589,10 @@
     // MENYU FUNKSIYALARI
     // ------------------------------
     function startGame() {
+      if (!window.TOMAMA_READY) {
+        alert("Profil yuklanyapti. 1-2 soniya kuting.");
+        return;
+      }
       tg?.HapticFeedback?.impactOccurred("medium");
       document.getElementById("mainMenu").classList.add("hidden");
       document.getElementById("gameCanvas").classList.remove("hidden");
