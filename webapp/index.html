@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>Tomama 2026 - Random Edition</title>
 
-  <!-- Telegram SDK (sizning hostingda to'g'ri link bo'lishi kerak) -->
+  <!-- Telegram SDK -->
   <script src="telegram.org"></script>
 
   <link rel="stylesheet" href="style.css">
@@ -13,6 +13,7 @@
     .avatar-img { width: 36px; height: 36px; border-radius: 50%; border: 2px solid #ff4d4d; margin-right: 10px; }
     .player-name { font-weight: bold; color: #fff; }
     .my-profile { background: rgba(255, 255, 255, 0.1); padding: 10px; border-radius: 10px; margin-bottom: 15px; display: flex; align-items: center; }
+    .guest-pill { font-size: 11px; padding: 3px 8px; border-radius: 999px; background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.18); margin-left: 8px; }
   </style>
 </head>
 <body>
@@ -29,12 +30,11 @@
     <div class="menu-box">
       <img src="assaets/logo.png" class="game-logo" alt="Tomama Logo">
 
-      <!-- PROFIL (RANDOM ISM VA AVATAR) -->
       <div id="userProfile" class="my-profile">
         <img id="myAvatar" src="" class="avatar-img">
         <div style="text-align: left;">
           <span id="myNickname" class="player-name">Yuklanmoqda...</span><br>
-          <small style="color: #00f2ff;">Sizning profilingiz</small>
+          <small id="myMode" style="color: #00f2ff;">Sizning profilingiz</small>
         </div>
       </div>
 
@@ -86,7 +86,7 @@
       tg.BackButton.onClick(() => hideAllMenus());
     }
 
-    // --- RANDOM PROFIL YARATISH ---
+    // Random profil
     function getOrGenerateUser() {
       let localUser = localStorage.getItem('tomama_user_2026');
       if (!localUser) {
@@ -123,7 +123,7 @@
         el.style.color = "white";
         el.style.fontSize = "13px";
         el.style.lineHeight = "1.35";
-        el.innerHTML = "Siz hozir <b>Guest</b> sifatida o‘ynayapsiz. <b>Top-10 reyting</b>da hisob yurishi uchun o‘yinga <b>Telegram</b> orqali kiring.";
+        el.innerHTML = "Siz hozir <b>Guest</b> sifatida o‘ynayapsiz. Reytingda hisob <b>saqlanadi</b>, lekin haqiqiy profil uchun o‘yinga <b>Telegram</b> orqali kirish tavsiya etiladi.";
         const box = document.getElementById("recordBox");
         box.parentNode.insertBefore(el, box);
       }
@@ -145,6 +145,7 @@
           username: tgUser.username ? `@${tgUser.username}` : (tgUser.first_name || localUser.nickname),
           avatar_id
         };
+        document.getElementById("myMode").innerText = "Telegram profil";
       } else {
         payload = {
           mode: "guest",
@@ -153,6 +154,7 @@
           avatar_id
         };
         showGuestWarning();
+        document.getElementById("myMode").innerText = "Guest profil (Telegram tavsiya)";
       }
 
       try {
@@ -173,7 +175,6 @@
       }
     }
 
-    // UI stats yangilash
     function updateUIStats() {
       const user = getOrGenerateUser();
       document.getElementById('myNickname').innerText = user.nickname;
@@ -187,7 +188,6 @@
       await autoRegister();
     });
 
-    // --- LEADERBOARDNI YUKLASH ---
     async function loadLeaderboard() {
       const list = document.getElementById('rankingList');
       list.innerHTML = "<p style='text-align:center;'>Yuklanmoqda...</p>";
@@ -208,6 +208,7 @@
           const nickname = player.nickname || "Noma'lum";
           const avatarId = player.avatar_id || 1;
           const avatar = `assaets/avatars/${avatarId}.png`;
+          const guestBadge = player.is_guest ? `<span class="guest-pill">Guest</span>` : ``;
 
           const playerRow = `
             <div style="display:flex; justify-content:space-between; align-items:center; padding:10px; border-bottom:1px solid rgba(255,255,255,0.1);">
@@ -215,6 +216,7 @@
                 <span style="margin-right:8px; width:20px;">${medal}</span>
                 <img src="${avatar}" style="width:32px; height:32px; border-radius:50%; margin-right:10px; border:1px solid #ff4d4d;">
                 <span>${nickname}</span>
+                ${guestBadge}
               </div>
               <strong style="color:#ffd700;">${player.score} 🍅</strong>
             </div>
@@ -226,7 +228,6 @@
       }
     }
 
-    // --- MENYU FUNKSIYALARI ---
     function startGame() {
       if (tg?.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
       document.getElementById('mainMenu').classList.add('hidden');
