@@ -9,7 +9,6 @@
 /* =========================
    GLOBALS / CONFIG
 ========================= */
-const SERVER_URL = window.SERVER_URL || "https://oyinbackent-production.up.railway.app";
 
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d", { alpha: true });
