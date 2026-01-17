@@ -1,303 +1,569 @@
-// game.js
-const canvas = document.getElementById('gameCanvas');
-const ctx = canvas.getContext('2d');
+/* game.js (FULL - UPDATED)
+   - Tomama Random Edition
+   - Profil tayyor bo‘lmaguncha o‘yin boshlamaydi (register tugashini kutadi)
+   - Score + Diamonds backendga /save orqali ketadi
+   - Menyuga qaytganda UI sync qilish uchun window.updateUIStats() ni chaqiradi (agar bor bo‘lsa)
+   - Canvas full-screen + resize
+*/
 
-function resizeCanvas() {
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
-  // basket qayta joylash
-  basket.y = canvas.height - 160;
-  if (basket.x + basket.width > canvas.width) basket.x = canvas.width - basket.width;
+/* =========================
+   GLOBALS / CONFIG
+========================= */
+const SERVER_URL = window.SERVER_URL || "https://oyinbackent-production.up.railway.app";
+
+const canvas = document.getElementById("gameCanvas");
+const ctx = canvas.getContext("2d", { alpha: true });
+
+let W = 0, H = 0, DPR = 1;
+
+// Game states
+let running = false;
+let gameOver = false;
+let paused = false;
+
+// Player / score
+let score = 0;
+let bestScore = Number(localStorage.getItem("highScore") || 0);
+
+// Diamonds (local running total)
+let totalDiamonds = Number(localStorage.getItem("totalDiamonds") || 0);
+let earnedDiamondsThisRun = 0;
+
+// Profile state (register finished?)
+let profileReady = false;
+let identity = localStorage.getItem("tomama_identity") || "";
+
+// Controls
+let pointerDown = false;
+let pointerX = 0;
+let pointerY = 0;
+
+// Timing
+let lastTs = 0;
+
+/* =========================
+   UTILS
+========================= */
+function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
+function rand(min, max) { return min + Math.random() * (max - min); }
+function now() { return performance.now(); }
+
+function isTelegramWebApp() {
+  return !!(window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe);
 }
-window.addEventListener('resize', resizeCanvas);
 
-let highScore = localStorage.getItem('highScore') || 0;
+// Simple toast / alert overlay
+function toast(msg) {
+  let t = document.getElementById("gameToast");
+  if (!t) {
+    t = document.createElement("div");
+    t.id = "gameToast";
+    t.style.cssText = `
+      position:fixed;left:50%;top:18px;transform:translateX(-50%);
+      max-width:min(520px, calc(100vw - 24px));
+      padding:10px 12px;border-radius:12px;
+      background:rgba(0,0,0,0.65);border:1px solid rgba(255,255,255,0.12);
+      color:#fff;font:600 13px/1.3 system-ui, -apple-system, Segoe UI, Roboto, Arial;
+      z-index:99999;backdrop-filter:blur(10px);
+      opacity:0;transition:opacity .18s ease;
+    `;
+    document.body.appendChild(t);
+  }
+  t.textContent = msg;
+  t.style.opacity = "1";
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => (t.style.opacity = "0"), 1800);
+}
 
-let assets = {};
-let imagesToLoad = 7; // basket, tomato, brand, snow, bomb, magnet, shield
-let loadedCount = 0;
-let assetsLoaded = false;
+async function ensureProfileReady() {
+  // Agar index.html autoRegister tugab localStoragega identity yozgan bo‘lsa – ok.
+  identity = localStorage.getItem("tomama_identity") || "";
+  profileReady = !!identity;
 
-const path = 'assaets/'; // Papka nomi to'g'riligini tekshiring
+  if (profileReady) return true;
 
-const loadAsset = (key, src) => {
-  assets[key] = new Image();
-  assets[key].src = path + src;
-  assets[key].onload = () => { loadedCount++; if (loadedCount === imagesToLoad) assetsLoaded = true; };
-  assets[key].onerror = () => { console.error(key + " yuklanmadi"); loadedCount++; };
+  // Hali tayyor bo‘lmasa 1-2 soniya kutib ko‘ramiz
+  toast("Profil yuklanyapti, 1–2 soniya kuting…");
+  const t0 = Date.now();
+  while (Date.now() - t0 < 2200) {
+    await new Promise((r) => setTimeout(r, 120));
+    identity = localStorage.getItem("tomama_identity") || "";
+    if (identity) {
+      profileReady = true;
+      return true;
+    }
+  }
+
+  // Baribir bo‘lmasa – guest yoki register ishlamagan.
+  toast("Profil topilmadi. Sahifani yangilang yoki Telegram WebApp orqali oching.");
+  return false;
+}
+
+/* =========================
+   RESIZE / CANVAS
+========================= */
+function resize() {
+  DPR = window.devicePixelRatio || 1;
+  const rect = canvas.getBoundingClientRect();
+
+  // Canvas hidden bo‘lsa ham, startda full-screen qilish uchun fallback:
+  const cssW = rect.width || window.innerWidth;
+  const cssH = rect.height || window.innerHeight;
+
+  W = Math.floor(cssW);
+  H = Math.floor(cssH);
+
+  canvas.width = Math.floor(W * DPR);
+  canvas.height = Math.floor(H * DPR);
+  canvas.style.width = W + "px";
+  canvas.style.height = H + "px";
+
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+}
+
+window.addEventListener("resize", resize);
+
+/* =========================
+   GAME OBJECTS
+========================= */
+// Player ball
+const player = {
+  x: 0,
+  y: 0,
+  r: 22,
+  vx: 0,
+  vy: 0,
+  speed: 520,
 };
 
-// ASSETS yuklash
-loadAsset('basket', 'basket.png');
-loadAsset('tomato', 'products/tomatoFon.png');
-loadAsset('brand', 'products/tomato.png');
-loadAsset('snow', 'products/snow.png');
-loadAsset('bomb', 'products/bomb.png');
-loadAsset('magnet', 'products/magnet.png');
-loadAsset('shield', 'products/shield.png');
+// Obstacles / targets (tomatoes)
+const tomatoes = [];
+const bombs = [];
 
-let basket = { x: 0, y: 0, width: 120, height: 85, originalWidth: 120 };
-let items = [];
-let score = 0, currentDiamonds = 0, lives = 3, combo = 0;
-let isGameOver = false;
-let spawnInterval = null;
+function resetGame() {
+  score = 0;
+  earnedDiamondsThisRun = 0;
+  gameOver = false;
+  paused = false;
 
-// Power-up taymerlari
-let slowModeTimer = 0, magnetTimer = 0, shieldActive = false, shakeTimer = 0;
-let gameSpeed = 7;
+  player.x = W / 2;
+  player.y = H * 0.72;
+  player.vx = 0;
+  player.vy = 0;
 
-// RoundRect helper (ba'zi brauzerlarda yo'q bo'lishi mumkin)
-if (!CanvasRenderingContext2D.prototype.roundRect) {
-  CanvasRenderingContext2D.prototype.roundRect = function (x, y, w, h, r) {
-    r = Math.min(r, w / 2, h / 2);
-    this.beginPath();
-    this.moveTo(x + r, y);
-    this.arcTo(x + w, y, x + w, y + h, r);
-    this.arcTo(x + w, y + h, x, y + h, r);
-    this.arcTo(x, y + h, x, y, r);
-    this.arcTo(x, y, x + w, y, r);
-    this.closePath();
-    return this;
+  tomatoes.length = 0;
+  bombs.length = 0;
+
+  // Spawn initial
+  for (let i = 0; i < 6; i++) spawnTomato(true);
+  for (let i = 0; i < 2; i++) spawnBomb(true);
+}
+
+function spawnTomato(initial = false) {
+  const r = rand(14, 20);
+  const x = rand(r + 10, W - r - 10);
+  const y = initial ? rand(40, H - 120) : -rand(60, 240);
+  const vy = rand(120, 260);
+
+  tomatoes.push({ x, y, r, vy, alive: true });
+}
+
+function spawnBomb(initial = false) {
+  const r = rand(14, 20);
+  const x = rand(r + 10, W - r - 10);
+  const y = initial ? rand(30, H - 160) : -rand(80, 360);
+  const vy = rand(160, 300);
+
+  bombs.push({ x, y, r, vy, alive: true });
+}
+
+function circleHit(ax, ay, ar, bx, by, br) {
+  const dx = ax - bx;
+  const dy = ay - by;
+  const rr = ar + br;
+  return dx * dx + dy * dy <= rr * rr;
+}
+
+/* =========================
+   INPUT
+========================= */
+function onPointerDown(e) {
+  pointerDown = true;
+  const p = getPointer(e);
+  pointerX = p.x;
+  pointerY = p.y;
+}
+function onPointerMove(e) {
+  const p = getPointer(e);
+  pointerX = p.x;
+  pointerY = p.y;
+}
+function onPointerUp() {
+  pointerDown = false;
+}
+
+function getPointer(e) {
+  const rect = canvas.getBoundingClientRect();
+  const clientX = (e.touches && e.touches[0] ? e.touches[0].clientX : e.clientX);
+  const clientY = (e.touches && e.touches[0] ? e.touches[0].clientY : e.clientY);
+  return {
+    x: (clientX - rect.left),
+    y: (clientY - rect.top),
   };
 }
 
-function spawnItem() {
-  if (isGameOver) return;
+canvas.addEventListener("mousedown", onPointerDown);
+canvas.addEventListener("mousemove", onPointerMove);
+window.addEventListener("mouseup", onPointerUp);
 
-  let rand = Math.random();
-  let type = 'tomato';
+canvas.addEventListener("touchstart", onPointerDown, { passive: true });
+canvas.addEventListener("touchmove", onPointerMove, { passive: true });
+window.addEventListener("touchend", onPointerUp, { passive: true });
 
-  if (rand < 0.12) type = 'bomb';
-  else if (rand < 0.18) type = 'brand'; // Olmos
-  else if (rand < 0.22) type = 'snow';  // Muzlatish
-  else if (rand < 0.25) type = 'magnet';
-  else if (rand < 0.28) type = 'shield';
+/* =========================
+   DRAW
+========================= */
+function drawBackground() {
+  // soft gradient background
+  const g = ctx.createLinearGradient(0, 0, 0, H);
+  g.addColorStop(0, "rgba(255, 245, 248, 1)");
+  g.addColorStop(1, "rgba(245, 250, 255, 1)");
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, W, H);
 
-  items.push({
-    x: Math.random() * (canvas.width - 65),
-    y: -80,
-    width: 65,
-    height: 65,
-    type: type,
-    speedMod: 0.8 + Math.random() * 0.7,
-    drift: (Math.random() - 0.5) * 2
-  });
+  // subtle grid
+  ctx.globalAlpha = 0.06;
+  ctx.strokeStyle = "#000";
+  ctx.lineWidth = 1;
+  const step = 42;
+  for (let x = 0; x < W; x += step) {
+    ctx.beginPath();
+    ctx.moveTo(x, 0);
+    ctx.lineTo(x, H);
+    ctx.stroke();
+  }
+  for (let y = 0; y < H; y += step) {
+    ctx.beginPath();
+    ctx.moveTo(0, y);
+    ctx.lineTo(W, y);
+    ctx.stroke();
+  }
+  ctx.globalAlpha = 1;
 }
 
-function update() {
-  if (isGameOver) return;
-
+function drawHUD() {
   ctx.save();
+  ctx.fillStyle = "rgba(0,0,0,0.65)";
+  ctx.font = "700 16px system-ui, -apple-system, Segoe UI, Roboto, Arial";
+  ctx.fillText(`🍅 Score: ${score}`, 16, 28);
+  ctx.fillText(`💎 +${earnedDiamondsThisRun} (Total: ${totalDiamonds})`, 16, 52);
 
-  let sx = 0, sy = 0;
-  if (shakeTimer > 0) {
-    sx = (Math.random() - 0.5) * 15;
-    sy = (Math.random() - 0.5) * 15;
-    shakeTimer--;
-  }
-
-  ctx.setTransform(1, 0, 0, 1, 0, 0);
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  ctx.translate(sx, sy);
-
-  let currentGlobalSpeed = (gameSpeed + (score / 250)) * (slowModeTimer > 0 ? 0.5 : 1);
-
-  if (slowModeTimer > 0) {
-    slowModeTimer--;
-    ctx.fillStyle = "rgba(135, 206, 250, 0.2)";
-    ctx.fillRect(-50, -50, canvas.width + 100, canvas.height + 100);
-  }
-
-  if (magnetTimer > 0) magnetTimer--;
-
-  // Savat
-  if (assetsLoaded && assets.basket.complete) {
-    ctx.drawImage(assets.basket, basket.x, basket.y, basket.width, basket.height);
-
-    if (shieldActive) {
-      ctx.beginPath();
-      ctx.strokeStyle = '#00f2ff';
-      ctx.lineWidth = 4;
-      ctx.arc(basket.x + basket.width / 2, basket.y + basket.height / 2, 70, 0, Math.PI * 2);
-      ctx.stroke();
-    }
-  }
-
-  for (let i = 0; i < items.length; i++) {
-    let p = items[i];
-
-    if (magnetTimer > 0 && (p.type === 'tomato' || p.type === 'brand')) {
-      let dx = (basket.x + basket.width / 2) - (p.x + p.width / 2);
-      p.x += dx * 0.1;
-    }
-
-    p.y += currentGlobalSpeed * p.speedMod;
-    p.x += p.drift;
-
-    if (p.x <= 0 || p.x + p.width >= canvas.width) p.drift *= -1;
-
-    if (assetsLoaded && assets[p.type]) {
-      ctx.drawImage(assets[p.type], p.x, p.y, p.width, p.height);
-    }
-
-    // To'qnashuv
-    if (p.y + p.height >= basket.y + 10 && p.y <= basket.y + 50 &&
-      p.x + p.width >= basket.x && p.x <= basket.x + basket.width) {
-
-      if (p.type === 'bomb') {
-        if (shieldActive) {
-          shieldActive = false;
-        } else {
-          lives--;
-          combo = 0;
-          shakeTimer = 20;
-        }
-      } else {
-        combo++;
-        if (p.type === 'tomato') score += 10 + (Math.floor(combo / 5) * 5);
-        else if (p.type === 'brand') { score += 100; currentDiamonds += 1; }
-        else if (p.type === 'snow') slowModeTimer = 400;
-        else if (p.type === 'magnet') magnetTimer = 420;
-        else if (p.type === 'shield') shieldActive = true;
-      }
-
-      items.splice(i, 1); i--;
-      if (lives <= 0) { gameOver(); break; }
-      continue;
-    }
-
-    if (p.y > canvas.height) {
-      if (p.type === 'tomato' || p.type === 'brand') {
-        lives--;
-        combo = 0;
-        shakeTimer = 10;
-      }
-      items.splice(i, 1); i--;
-      if (lives <= 0) { gameOver(); break; }
-    }
-  }
-
+  ctx.fillStyle = "rgba(0,0,0,0.45)";
+  ctx.font = "600 12px system-ui, -apple-system, Segoe UI, Roboto, Arial";
+  ctx.fillText(profileReady ? "Profil: OK" : "Profil: ...", 16, 72);
   ctx.restore();
-
-  if (!isGameOver) {
-    drawUI();
-    requestAnimationFrame(update);
-  }
 }
 
-function drawUI() {
-  ctx.fillStyle = "rgba(0, 0, 0, 0.6)";
-  ctx.roundRect(15, 15, 250, 150, 15);
+function drawPlayer() {
+  ctx.save();
+  // shadow
+  ctx.beginPath();
+  ctx.fillStyle = "rgba(0,0,0,0.12)";
+  ctx.ellipse(player.x, player.y + player.r * 0.9, player.r * 0.95, player.r * 0.45, 0, 0, Math.PI * 2);
   ctx.fill();
 
-  ctx.fillStyle = 'white';
-  ctx.font = 'bold 20px sans-serif';
-  ctx.fillText('🍅 Ball: ' + score, 30, 45);
+  // body
+  const grad = ctx.createRadialGradient(player.x - 6, player.y - 6, 4, player.x, player.y, player.r);
+  grad.addColorStop(0, "rgba(255, 90, 90, 1)");
+  grad.addColorStop(1, "rgba(165, 20, 20, 1)");
+  ctx.beginPath();
+  ctx.fillStyle = grad;
+  ctx.arc(player.x, player.y, player.r, 0, Math.PI * 2);
+  ctx.fill();
 
-  ctx.fillStyle = '#00f2ff';
-  ctx.fillText('💎 Almaz: ' + currentDiamonds, 30, 75);
+  // highlight
+  ctx.beginPath();
+  ctx.fillStyle = "rgba(255,255,255,0.35)";
+  ctx.arc(player.x - 7, player.y - 7, player.r * 0.35, 0, Math.PI * 2);
+  ctx.fill();
 
-  ctx.fillStyle = '#ff4d4d';
-  ctx.fillText('❤️ Jon: ' + '❤️'.repeat(Math.max(0, lives)), 30, 105);
+  ctx.restore();
+}
 
-  ctx.font = 'bold 14px sans-serif';
-  if (slowModeTimer > 0) { ctx.fillStyle = '#00f2ff'; ctx.fillText('❄️ MUZLATISH AKTIV', 30, 135); }
-  else if (magnetTimer > 0) { ctx.fillStyle = '#FFD700'; ctx.fillText('🧲 MAGNIT AKTIV', 30, 135); }
-  else if (shieldActive) { ctx.fillStyle = '#00ff00'; ctx.fillText('🛡️ QALQON AKTIV', 30, 135); }
+function drawTomato(t) {
+  ctx.save();
+  ctx.beginPath();
+  ctx.fillStyle = "rgba(255, 70, 70, 0.95)";
+  ctx.arc(t.x, t.y, t.r, 0, Math.PI * 2);
+  ctx.fill();
 
-  if (combo > 2) {
-    ctx.fillStyle = '#FFD700';
-    ctx.font = 'italic bold 24px sans-serif';
-    ctx.fillText('🔥 x' + combo, canvas.width - 100, 50);
+  ctx.beginPath();
+  ctx.fillStyle = "rgba(255,255,255,0.25)";
+  ctx.arc(t.x - t.r * 0.28, t.y - t.r * 0.28, t.r * 0.35, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.restore();
+}
+
+function drawBomb(b) {
+  ctx.save();
+  ctx.beginPath();
+  ctx.fillStyle = "rgba(20, 20, 20, 0.9)";
+  ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.beginPath();
+  ctx.strokeStyle = "rgba(255, 90, 90, 0.9)";
+  ctx.lineWidth = 2;
+  ctx.arc(b.x, b.y, b.r - 2, 0, Math.PI * 2);
+  ctx.stroke();
+
+  ctx.restore();
+}
+
+function drawGameOver() {
+  ctx.save();
+  ctx.fillStyle = "rgba(0,0,0,0.55)";
+  ctx.fillRect(0, 0, W, H);
+
+  ctx.fillStyle = "#fff";
+  ctx.font = "900 34px system-ui, -apple-system, Segoe UI, Roboto, Arial";
+  ctx.textAlign = "center";
+  ctx.fillText("Game Over", W / 2, H / 2 - 30);
+
+  ctx.font = "800 18px system-ui, -apple-system, Segoe UI, Roboto, Arial";
+  ctx.fillText(`Score: ${score}    💎 +${earnedDiamondsThisRun}`, W / 2, H / 2 + 10);
+
+  ctx.font = "700 14px system-ui, -apple-system, Segoe UI, Roboto, Arial";
+  ctx.fillStyle = "rgba(255,255,255,0.85)";
+  ctx.fillText("Klik / Tap: qayta boshlash", W / 2, H / 2 + 44);
+  ctx.restore();
+}
+
+/* =========================
+   UPDATE
+========================= */
+function update(dt) {
+  if (paused || gameOver) return;
+
+  // Movement: follow pointer X when pressed, else slow drift
+  if (pointerDown) {
+    const targetX = clamp(pointerX, player.r + 8, W - player.r - 8);
+    const dx = targetX - player.x;
+    player.vx = dx * 10; // smoothing
+  } else {
+    player.vx *= 0.94;
   }
+
+  player.x += player.vx * dt;
+  player.x = clamp(player.x, player.r + 8, W - player.r - 8);
+
+  // Spawn speed scaling with score
+  const speedBoost = 1 + Math.min(1.2, score / 3500);
+
+  // Update tomatoes
+  for (const t of tomatoes) {
+    t.y += t.vy * dt * speedBoost;
+
+    // Collision with player
+    if (t.alive && circleHit(player.x, player.y, player.r, t.x, t.y, t.r)) {
+      t.alive = false;
+      score += 45;
+
+      // Diamonds rule: every 250 score earn 1 diamond (approx)
+      // Instead of per-catch random, we accumulate by score steps.
+      if (score % 250 === 0) {
+        earnedDiamondsThisRun += 1;
+      }
+    }
+
+    // Out of screen => recycle
+    if (t.y - t.r > H + 40) {
+      t.x = rand(t.r + 10, W - t.r - 10);
+      t.y = -rand(60, 220);
+      t.r = rand(14, 20);
+      t.vy = rand(120, 260);
+      t.alive = true;
+    }
+  }
+
+  // Update bombs
+  for (const b of bombs) {
+    b.y += b.vy * dt * speedBoost;
+
+    if (b.alive && circleHit(player.x, player.y, player.r, b.x, b.y, b.r)) {
+      b.alive = false;
+      endGame();
+      return;
+    }
+
+    if (b.y - b.r > H + 60) {
+      b.x = rand(b.r + 10, W - b.r - 10);
+      b.y = -rand(120, 360);
+      b.r = rand(14, 20);
+      b.vy = rand(160, 300);
+      b.alive = true;
+    }
+  }
+
+  // Maintain object count
+  // (If you later want harder mode, increase bombs or tomatoes.)
 }
 
-function moveBasket(e) {
-  let clientX = e.touches ? e.touches[0].clientX : e.clientX;
-  basket.x = clientX - basket.width / 2;
-  if (basket.x < 0) basket.x = 0;
-  if (basket.x + basket.width > canvas.width) basket.x = canvas.width - basket.width;
-}
-
-canvas.addEventListener('touchmove', (e) => { e.preventDefault(); moveBasket(e); }, { passive: false });
-canvas.addEventListener('mousemove', moveBasket);
-
-async function saveToServer() {
+/* =========================
+   SAVE TO BACKEND
+========================= */
+async function saveRunToServer() {
   try {
-    const identity = localStorage.getItem("tomama_identity");
+    identity = localStorage.getItem("tomama_identity") || "";
     if (!identity) return;
 
-    // SERVER_URL index.html da global
+    // Save best score and earned diamonds this run
     const res = await fetch(`${SERVER_URL}/save`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         identity,
         score,
-        earned_diamonds: currentDiamonds
-      })
+        earned_diamonds: earnedDiamondsThisRun,
+      }),
     });
 
     const data = await res.json();
-    if (data?.ok) {
-      // Server diamonds qaytarsa localga yozamiz
-      if (typeof data.diamonds === "number") {
-        localStorage.setItem("totalDiamonds", String(data.diamonds));
+    if (data && data.ok) {
+      // Sync local values with server response
+      bestScore = Math.max(bestScore, Number(data.score || 0));
+      totalDiamonds = Number(data.diamonds || totalDiamonds);
+
+      localStorage.setItem("highScore", String(bestScore));
+      localStorage.setItem("totalDiamonds", String(totalDiamonds));
+
+      // Update UI in menu if available
+      if (typeof window.updateUIStats === "function") {
+        window.updateUIStats();
       }
-      // Serverdagi highscore bilan ham sync
-      if (typeof data.score === "number") {
-        const hs = Math.max(Number(localStorage.getItem("highScore") || 0), data.score);
-        localStorage.setItem("highScore", String(hs));
-      }
-    } else {
-      console.error("Save failed:", data);
     }
   } catch (e) {
-    console.error("Saqlashda xato:", e);
+    console.warn("SAVE failed:", e);
   }
 }
 
-function gameOver() {
-  if (isGameOver) return;
-  isGameOver = true;
-  clearInterval(spawnInterval);
+/* =========================
+   GAME END / RESTART
+========================= */
+function endGame() {
+  gameOver = true;
+  running = true; // still drawing end screen
 
-  // local highscore
-  const localHS = Number(localStorage.getItem('highScore') || 0);
-  if (score > localHS) localStorage.setItem('highScore', String(score));
+  // Update local best immediately
+  if (score > bestScore) {
+    bestScore = score;
+    localStorage.setItem("highScore", String(bestScore));
+  }
 
-  // serverga yuborish (awaitsiz, tez)
-  saveToServer();
+  // Sync diamonds local preview
+  // (server will confirm on save)
+  // Here we do NOT add earned to total locally; we wait server result.
+  saveRunToServer();
 
-  // Telegram tugmasi
-  if (window.Telegram?.WebApp) {
-    const tg = window.Telegram.WebApp;
-    tg.MainButton.setText(`NATIJA: ${score} 🍅 | MENYUGA QAYTISH`);
-    tg.MainButton.show();
-    tg.MainButton.onClick(() => {
-      tg.MainButton.hide();
-      window.location.reload();
-    });
-  } else {
-    alert(`O'yin tugadi! Ball: ${score}`);
-    window.location.reload();
+  // Telegram haptic
+  try {
+    window.Telegram?.WebApp?.HapticFeedback?.notificationOccurred("error");
+  } catch {}
+}
+
+function restart() {
+  resetGame();
+  lastTs = now();
+}
+
+/* =========================
+   LOOP
+========================= */
+function loop(ts) {
+  if (!running) return;
+
+  const t = ts || now();
+  const dt = Math.min(0.033, (t - lastTs) / 1000 || 0);
+  lastTs = t;
+
+  drawBackground();
+
+  // Draw objects
+  for (const tmt of tomatoes) if (tmt.alive) drawTomato(tmt);
+  for (const b of bombs) if (b.alive) drawBomb(b);
+
+  drawPlayer();
+  drawHUD();
+
+  if (!gameOver) update(dt);
+  else drawGameOver();
+
+  requestAnimationFrame(loop);
+}
+
+/* =========================
+   START / EXPOSE API
+========================= */
+async function startGameLoop() {
+  // Ensure canvas size is correct now
+  resize();
+
+  // Prevent starting game if profile not ready
+  const ok = await ensureProfileReady();
+  if (!ok) return;
+
+  // Mark profile ready state for HUD
+  profileReady = true;
+
+  // Reset and start
+  restart();
+  running = true;
+  requestAnimationFrame(loop);
+
+  // Telegram feedback
+  try {
+    window.Telegram?.WebApp?.HapticFeedback?.impactOccurred("medium");
+  } catch {}
+}
+
+// Game over tap to restart
+function onCanvasClick() {
+  if (!running) return;
+  if (gameOver) {
+    restart();
   }
 }
 
-window.startGameLoop = function () {
-  // canvas ko‘rinadigan bo‘lgach resize
-  resizeCanvas();
+canvas.addEventListener("click", onCanvasClick);
+canvas.addEventListener("touchend", (e) => {
+  // tap to restart on gameover
+  if (gameOver) restart();
+}, { passive: true });
 
-  // basket boshlang‘ich
-  basket.x = canvas.width / 2 - 60;
-  basket.y = canvas.height - 160;
+// Expose to index.html
+window.startGameLoop = startGameLoop;
 
-  isGameOver = false;
-  score = 0; lives = 3; currentDiamonds = 0; combo = 0;
-  items = [];
-  slowModeTimer = 0; magnetTimer = 0; shieldActive = false; shakeTimer = 0;
+/* =========================
+   INITIAL CANVAS SETUP
+========================= */
+(function init() {
+  // Canvas must fill screen when shown
+  // If you have CSS controlling canvas size, keep it.
+  // Here we just ensure it has a default full screen.
+  canvas.style.display = "block";
+  canvas.style.position = "fixed";
+  canvas.style.inset = "0";
+  canvas.style.width = "100vw";
+  canvas.style.height = "100vh";
+  canvas.style.touchAction = "none";
+  resize();
 
-  clearInterval(spawnInterval);
-  spawnInterval = setInterval(spawnItem, 600);
-  requestAnimationFrame(update);
-};
+  // Read local best & diamonds
+  bestScore = Number(localStorage.getItem("highScore") || 0);
+  totalDiamonds = Number(localStorage.getItem("totalDiamonds") || 0);
+
+  // identity may appear later after autoRegister
+  identity = localStorage.getItem("tomama_identity") || "";
+  profileReady = !!identity;
+})();
