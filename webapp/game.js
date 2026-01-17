@@ -22,6 +22,7 @@ const loadAsset = (key, src) => {
   assets[key].onerror = () => { console.error(key + " yuklanmadi"); loadedCount++; };
 };
 
+// ASSETS yuklash
 loadAsset('basket', 'basket.png');
 loadAsset('tomato', 'products/tomatoFon.png');
 loadAsset('brand', 'products/tomato.png');
@@ -30,12 +31,13 @@ loadAsset('bomb', 'products/bomb.png');
 loadAsset('magnet', 'products/magnet.png');
 loadAsset('shield', 'products/shield.png');
 
-let basket = { x: canvas.width / 2 - 60, y: canvas.height - 160, width: 120, height: 85 };
+let basket = { x: canvas.width / 2 - 60, y: canvas.height - 160, width: 120, height: 85, originalWidth: 120 };
 let items = [];
 let score = 0, currentDiamonds = 0, lives = 3, combo = 0;
 let isGameOver = false;
 let spawnInterval = null;
 
+// Power-up taymerlari
 let slowModeTimer = 0, magnetTimer = 0, shieldActive = false, shakeTimer = 0;
 let gameSpeed = 7;
 
@@ -56,7 +58,7 @@ function spawnItem() {
     y: -80,
     width: 65,
     height: 65,
-    type,
+    type: type,
     speedMod: 0.8 + Math.random() * 0.7,
     drift: (Math.random() - 0.5) * 2
   });
@@ -74,6 +76,7 @@ function update() {
     shakeTimer--;
   }
 
+  // transform reset + clear
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   ctx.translate(sx, sy);
@@ -88,6 +91,7 @@ function update() {
 
   if (magnetTimer > 0) magnetTimer--;
 
+  // Basket chizish
   if (assetsLoaded && assets.basket.complete) {
     ctx.drawImage(assets.basket, basket.x, basket.y, basket.width, basket.height);
 
@@ -95,7 +99,7 @@ function update() {
       ctx.beginPath();
       ctx.strokeStyle = '#00f2ff';
       ctx.lineWidth = 4;
-      ctx.arc(basket.x + basket.width/2, basket.y + basket.height/2, 70, 0, Math.PI * 2);
+      ctx.arc(basket.x + basket.width / 2, basket.y + basket.height / 2, 70, 0, Math.PI * 2);
       ctx.stroke();
     }
   }
@@ -103,8 +107,9 @@ function update() {
   for (let i = 0; i < items.length; i++) {
     let p = items[i];
 
+    // Magnet effekti
     if (magnetTimer > 0 && (p.type === 'tomato' || p.type === 'brand')) {
-      let dx = (basket.x + basket.width/2) - (p.x + p.width/2);
+      let dx = (basket.x + basket.width / 2) - (p.x + p.width / 2);
       p.x += dx * 0.1;
     }
 
@@ -119,7 +124,7 @@ function update() {
 
     // Collision
     if (p.y + p.height >= basket.y + 10 && p.y <= basket.y + 50 &&
-        p.x + p.width >= basket.x && p.x <= basket.x + basket.width) {
+      p.x + p.width >= basket.x && p.x <= basket.x + basket.width) {
 
       if (p.type === 'bomb') {
         if (shieldActive) {
@@ -143,6 +148,7 @@ function update() {
       continue;
     }
 
+    // Missed
     if (p.y > canvas.height) {
       if (p.type === 'tomato' || p.type === 'brand') {
         lives--;
@@ -170,10 +176,8 @@ function drawUI() {
   ctx.fillStyle = 'white';
   ctx.font = 'bold 20px sans-serif';
   ctx.fillText('🍅 Ball: ' + score, 30, 45);
-
   ctx.fillStyle = '#00f2ff';
   ctx.fillText('💎 Almaz: ' + currentDiamonds, 30, 75);
-
   ctx.fillStyle = '#ff4d4d';
   ctx.fillText('❤️ Jon: ' + '❤️'.repeat(Math.max(0, lives)), 30, 105);
 
@@ -199,32 +203,42 @@ function moveBasket(e) {
 canvas.addEventListener('touchmove', (e) => { e.preventDefault(); moveBasket(e); }, { passive: false });
 canvas.addEventListener('mousemove', moveBasket);
 
+async function saveScoreToServer() {
+  try {
+    const SERVER_URL = window.SERVER_URL;
+    if (!SERVER_URL) return;
+
+    const identity = localStorage.getItem("tomama_identity");
+    if (!identity) return;
+
+    await fetch(`${SERVER_URL}/save`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ identity, score })
+    });
+  } catch (e) {
+    console.warn("saveScore error:", e);
+  }
+}
+
 function gameOver() {
   if (isGameOver) return;
   isGameOver = true;
   clearInterval(spawnInterval);
 
-  // Local rekordlar
+  // Serverga score yuborish (identity orqali)
+  saveScoreToServer();
+
+  // Local statlar
   totalDiamonds += currentDiamonds;
   localStorage.setItem('totalDiamonds', totalDiamonds);
-  if (score > (localStorage.getItem('highScore') || 0)) {
-    localStorage.setItem('highScore', score);
-  }
+  const prevHigh = Number(localStorage.getItem('highScore') || 0);
+  if (score > prevHigh) localStorage.setItem('highScore', String(score));
 
-  // ✅ Backendga score yuborish: identity orqali
-  const identity = localStorage.getItem("tomama_identity");
-
-  if (identity && window.SERVER_URL) {
-    fetch(`${window.SERVER_URL}/save`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ identity, score })
-    }).catch(() => {});
-  }
-
-  // Telegram button
+  // Telegram button yoki alert
   if (window.Telegram?.WebApp) {
     const tg = window.Telegram.WebApp;
+    tg.MainButton.offClick();
     tg.MainButton.setText(`NATIJA: ${score} 🍅 | MENYUGA QAYTISH`);
     tg.MainButton.show();
     tg.MainButton.onClick(() => {
@@ -237,13 +251,23 @@ function gameOver() {
   }
 }
 
-window.startGameLoop = function() {
+window.startGameLoop = function () {
   isGameOver = false;
-  score = 0; lives = 3; currentDiamonds = 0; combo = 0;
-  items = []; slowModeTimer = 0; magnetTimer = 0; shieldActive = false;
+  score = 0;
+  lives = 3;
+  currentDiamonds = 0;
+  combo = 0;
+  items = [];
+  slowModeTimer = 0;
+  magnetTimer = 0;
+  shieldActive = false;
+  shakeTimer = 0;
 
   if (spawnInterval) clearInterval(spawnInterval);
   spawnInterval = setInterval(spawnItem, 600);
-
   requestAnimationFrame(update);
+
+  if (window.Telegram?.WebApp) {
+    window.Telegram.WebApp.MainButton.hide();
+  }
 };
