@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>Tomama 2026 - Random Edition</title>
 
-  <!-- MUHIM: Telegram WebApp SDK (doimo head ichida bo'lsin) -->
+  <!-- Telegram SDK (HEAD ichida bo‘lsin) -->
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
   <link rel="stylesheet" href="style.css">
@@ -14,21 +14,9 @@
     .avatar-img { width: 36px; height: 36px; border-radius: 50%; border: 2px solid #ff4d4d; margin-right: 10px; }
     .player-name { font-weight: bold; color: #fff; }
     .my-profile { background: rgba(255, 255, 255, 0.1); padding: 10px; border-radius: 10px; margin-bottom: 15px; display: flex; align-items: center; }
-    .guest-warning {
-      margin-top: 10px;
-      font-size: 12px;
-      line-height: 1.3;
-      color: rgba(255,255,255,0.75);
-      background: rgba(255, 82, 82, 0.10);
-      border: 1px solid rgba(255, 82, 82, 0.25);
-      padding: 10px;
-      border-radius: 12px;
-      display: none;
-      text-align: left;
-    }
+    .warn-box { margin-top:10px; padding:10px; border-radius:12px; background: rgba(255, 183, 77, 0.12); border: 1px solid rgba(255,183,77,0.35); color:#ffcc80; font-size:12px; line-height:1.4; display:none; }
   </style>
 </head>
-
 <body>
 
   <!-- FON ELEMENTLARI -->
@@ -45,17 +33,16 @@
 
       <!-- PROFIL -->
       <div id="userProfile" class="my-profile">
-        <img id="myAvatar" src="assaets/avatars/1.png" class="avatar-img" alt="avatar">
-        <div style="text-align: left;">
+        <img id="myAvatar" src="assaets/avatars/1.png" class="avatar-img" alt="Avatar">
+        <div style="text-align:left;">
           <span id="myNickname" class="player-name">Yuklanmoqda...</span><br>
-          <small style="color: #00f2ff;">Sizning profilingiz</small>
+          <small style="color:#00f2ff;">Sizning profilingiz</small>
         </div>
       </div>
 
-      <!-- GUEST OG'OHLANTIRISH -->
-      <div id="guestWarning" class="guest-warning">
-        Siz hozir <b>Guest</b> sifatida o‘ynayapsiz. Telegram orqali kirsangiz akkaunt mustahkam bo‘ladi va reytingda
-        ishonchli tarzda saqlanadi.
+      <!-- Guest warning -->
+      <div id="guestWarn" class="warn-box">
+        Siz hozir <b>Guest</b> sifatida o‘ynayapsiz. Reyting va kuponlar to‘liq ishlashi uchun o‘yinni <b>Telegram WebApp</b> orqali oching.
       </div>
 
       <div id="recordBox">
@@ -74,7 +61,7 @@
   <div id="rankingMenu" class="menu-container hidden">
     <div class="menu-box">
       <h2 style="color: white; margin-top: 0; margin-bottom: 20px;">🏆 Top-10 Reyting</h2>
-      <div id="rankingList" style="color: white; min-height: 150px; text-align: left; overflow-y: auto; max-height: 250px;">
+      <div id="rankingList" style="color:white; min-height:150px; text-align:left; overflow-y:auto; max-height:250px;">
         Yuklanmoqda...
       </div>
       <button class="back-btn" style="margin-top: 20px;" onclick="hideAllMenus()">⬅️ Ortga</button>
@@ -84,9 +71,9 @@
   <!-- KUPONLAR MENYUSI -->
   <div id="couponsMenu" class="menu-container hidden">
     <div class="menu-box">
-      <h2 style="color: white; margin-top: 0;">🎫 Kuponlarim</h2>
-      <div id="couponList" style="color: white; margin-bottom: 20px;">
-        <p style="opacity: 0.6;">Hozircha kuponlar yo‘q</p>
+      <h2 style="color:white; margin-top:0;">🎫 Kuponlarim</h2>
+      <div id="couponList" style="color:white; margin-bottom: 20px;">
+        <p style="opacity:0.7;">Yuklanmoqda...</p>
       </div>
       <button class="back-btn" onclick="hideAllMenus()">⬅️ Ortga</button>
     </div>
@@ -96,110 +83,93 @@
   <canvas id="gameCanvas" class="hidden"></canvas>
 
   <script>
+    const tg = window.Telegram?.WebApp;
+
     // Backend URL
     const SERVER_URL = "https://oyinbackent-production.up.railway.app";
-    window.SERVER_URL = SERVER_URL;
 
-    const tg = window.Telegram?.WebApp;
     if (tg) {
       tg.ready();
       tg.expand();
-      tg.setHeaderColor('#81d4fa');
+      tg.setHeaderColor("#81d4fa");
       tg.BackButton.onClick(() => hideAllMenus());
     }
 
-    // ---------- Guest ID ----------
+    // ------------------------------
+    // Guest ID (browser uchun)
+    // ------------------------------
     function getOrCreateGuestId() {
-      let id = localStorage.getItem("tomama_guest_id");
-      if (!id) {
-        // oddiy UUID uslubi
-        id = "g_" + Math.random().toString(16).slice(2) + "_" + Date.now();
-        localStorage.setItem("tomama_guest_id", id);
+      let gid = localStorage.getItem("tomama_guest_id");
+      if (!gid) {
+        gid = crypto?.randomUUID ? crypto.randomUUID() : String(Math.random()).slice(2) + "_" + Date.now();
+        localStorage.setItem("tomama_guest_id", gid);
       }
-      return id;
+      return gid;
     }
 
-    // ---------- Name storage ----------
-    function getSavedName() {
-      return (localStorage.getItem("tomama_name") || "").trim();
+    // ------------------------------
+    // Avatardan avatar_id olish (assaets/avatars/12.png -> 12)
+    // ------------------------------
+    function extractAvatarId(avatarPath) {
+      const m = String(avatarPath || "").match(/avatars\/(\d+)\.png/i);
+      return m ? parseInt(m[1], 10) : 1;
     }
 
-    function setSavedName(name) {
-      localStorage.setItem("tomama_name", String(name || "").trim());
-    }
-
-    function isTelegramUser() {
-      const u = window.Telegram?.WebApp?.initDataUnsafe?.user;
-      return !!u?.id;
-    }
-
-    // Guest bo'lsa ism majburiy; Telegram bo'lsa majburiy emas
-    function ensureNameIfGuest(forcePrompt = false) {
-      if (isTelegramUser()) return true;
-
-      let name = getSavedName();
-      if (!name || forcePrompt) {
-        name = prompt("Ismingizni kiriting (reytingda shu chiqadi):", name || "");
-        name = (name || "").trim();
-        if (!name) {
-          alert("Ism kiritilmasa o‘yin boshlanmaydi. Iltimos ism kiriting.");
-          return false;
-        }
-        setSavedName(name);
+    // ------------------------------
+    // Random profil: faqat guest yoki username yo‘q bo‘lsa ishlaydi
+    // ------------------------------
+    function getOrGenerateUser() {
+      let localUser = localStorage.getItem("tomama_user_2026");
+      if (!localUser) {
+        const adjectives = ["Chaqqon", "Tezkor", "Olovli", "Super", "Mantiqiy", "Yulduzli", "Oltin", "Botir"];
+        const nouns = ["Pomidor", "Tomama", "Chempion", "Usta", "Sardor", "Lochin", "Pahlavon"];
+        const randomName = adjectives[Math.floor(Math.random() * adjectives.length)] + " " + nouns[Math.floor(Math.random() * nouns.length)];
+        const randomAvatar = `assaets/avatars/${Math.floor(Math.random() * 20) + 1}.png`;
+        const newUser = { nickname: randomName, avatar: randomAvatar };
+        localStorage.setItem("tomama_user_2026", JSON.stringify(newUser));
+        return newUser;
       }
-      return true;
-    }
-
-    // Bitta manba: o'yinda ham, reytingda ham shu yuboriladi
-    function getDisplayName() {
-      const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
-      const localName = getSavedName();
-
-      if (tgUser?.id) {
-        if (tgUser.username) return `@${tgUser.username}`;
-        if (tgUser.first_name) return tgUser.first_name;
-        return localName || "Telegram User";
-      }
-      return localName || "Guest";
+      try { return JSON.parse(localUser); } catch { return { nickname:"Pomidor", avatar:"assaets/avatars/1.png" }; }
     }
 
     function showGuestWarning() {
-      const el = document.getElementById("guestWarning");
+      const el = document.getElementById("guestWarn");
       if (el) el.style.display = "block";
     }
-
-    // ---------- Avatar id ----------
-    function getAvatarId() {
-      // Agar oldin random avatar ishlatgan bo'lsangiz, shu joyda saqlab qo'yamiz
-      let id = parseInt(localStorage.getItem("tomama_avatar_id") || "1", 10);
-      if (!id || id < 1) id = 1;
-      // Agar avval umuman bo'lmasa, 1 qo'yamiz
-      localStorage.setItem("tomama_avatar_id", String(id));
-      return id;
+    function hideGuestWarning() {
+      const el = document.getElementById("guestWarn");
+      if (el) el.style.display = "none";
     }
 
-    // ---------- Register ----------
+    // ------------------------------
+    // AUTO REGISTER
+    // ------------------------------
     async function autoRegister() {
       const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
-      const avatar_id = getAvatarId();
-      const username = getDisplayName();
+      const localUser = getOrGenerateUser();
+
+      const avatar_id = extractAvatarId(localUser.avatar);
 
       let payload;
+
+      // Telegram orqali kirgan bo‘lsa
       if (tgUser?.id) {
+        hideGuestWarning();
         payload = {
           mode: "telegram",
           telegram_id: tgUser.id,
-          username,
+          username: tgUser.username ? `@${tgUser.username}` : (tgUser.first_name || localUser.nickname),
           avatar_id
         };
       } else {
+        // Browser guest
+        showGuestWarning();
         payload = {
           mode: "guest",
           guest_id: getOrCreateGuestId(),
-          username,
+          username: localUser.nickname,
           avatar_id
         };
-        showGuestWarning();
       }
 
       const res = await fetch(`${SERVER_URL}/register`, {
@@ -210,32 +180,44 @@
 
       const data = await res.json();
 
-      if (data?.ok && data?.user?.identity) {
+      if (data?.ok) {
         localStorage.setItem("tomama_identity", data.user.identity);
         localStorage.setItem("tomama_is_guest", String(data.user.is_guest));
-        return data.user;
+        // DB diamondsni localga sync
+        if (typeof data.user.diamonds === "number") {
+          localStorage.setItem("totalDiamonds", String(data.user.diamonds));
+        }
+        // Nick/Avatar UI
+        localStorage.setItem("tomama_username", data.user.username || payload.username);
+        localStorage.setItem("tomama_avatar_id", String(data.user.avatar_id || avatar_id));
       } else {
         console.error("Register failed:", data);
-        return null;
       }
     }
 
-    // ---------- UI stats ----------
+    // ------------------------------
+    // UI stats yangilash
+    // ------------------------------
     function updateUIStats() {
-      const name = getDisplayName();
-      document.getElementById("myNickname").innerText = name;
+      const nickname = localStorage.getItem("tomama_username") || (getOrGenerateUser().nickname);
+      const avatarId = Number(localStorage.getItem("tomama_avatar_id") || 1);
+      const avatarPath = `assaets/avatars/${avatarId}.png`;
 
-      const avatarId = getAvatarId();
-      document.getElementById("myAvatar").src = `assaets/avatars/${avatarId}.png`;
+      document.getElementById("myNickname").innerText = nickname;
+      document.getElementById("myAvatar").src = avatarPath;
 
       document.getElementById("personalBest").innerText = localStorage.getItem("highScore") || 0;
       document.getElementById("totalDiamonds").innerText = localStorage.getItem("totalDiamonds") || 0;
-
-      if (!isTelegramUser()) showGuestWarning();
-      else document.getElementById("guestWarning").style.display = "none";
     }
 
-    // ---------- Leaderboard ----------
+    window.addEventListener("load", async () => {
+      await autoRegister();
+      updateUIStats();
+    });
+
+    // ------------------------------
+    // LEADERBOARD
+    // ------------------------------
     async function loadLeaderboard() {
       const list = document.getElementById("rankingList");
       list.innerHTML = "<p style='text-align:center;'>Yuklanmoqda...</p>";
@@ -253,44 +235,231 @@
 
         data.forEach((player, index) => {
           const medal = index === 0 ? "🥇" : index === 1 ? "🥈" : index === 2 ? "🥉" : `${index + 1}.`;
-
           const nickname = player.nickname || "NoName";
           const avatar = player.avatar_url || "assaets/avatars/1.png";
-          const guestBadge = player.is_guest ? `<span style="opacity:.6; margin-left:8px; font-size:12px;">👤 Guest</span>` : "";
 
           const playerRow = `
             <div style="display:flex; justify-content:space-between; align-items:center; padding:10px; border-bottom:1px solid rgba(255,255,255,0.1);">
-              <div style="display:flex; align-items:center; gap:8px;">
-                <span style="width:26px;">${medal}</span>
-                <img src="${avatar}" style="width:32px; height:32px; border-radius:50%; border:1px solid rgba(255,82,82,.6);">
-                <span>${nickname}${guestBadge}</span>
+              <div style="display:flex; align-items:center;">
+                <span style="margin-right:8px; width:20px;">${medal}</span>
+                <img src="${avatar}" style="width:32px; height:32px; border-radius:50%; margin-right:10px; border:1px solid #ff4d4d;">
+                <span>${nickname}</span>
               </div>
               <strong style="color:#ffd700;">${player.score} 🍅</strong>
             </div>
           `;
           list.innerHTML += playerRow;
         });
-
       } catch (e) {
-        console.error("Leaderboard error:", e);
-        list.innerHTML = "<p style='color: #ff5252; text-align:center;'>Reytingni yuklab bo'lmadi.</p>";
+        list.innerHTML = "<p style='color:#ff5252; text-align:center;'>Reytingni yuklab bo'lmadi.</p>";
+        console.error(e);
       }
     }
 
-    // ---------- Menyu ----------
+    // ------------------------------
+    // COUPONS
+    // ------------------------------
+    async function loadCoupons() {
+      const identity = localStorage.getItem("tomama_identity");
+      const wrap = document.getElementById("couponList");
+      if (!wrap) return;
+
+      wrap.innerHTML = "<p style='opacity:0.7'>Yuklanmoqda...</p>";
+
+      try {
+        const [catRes, myRes] = await Promise.all([
+          fetch(`${SERVER_URL}/coupons`),
+          identity ? fetch(`${SERVER_URL}/my/coupons?identity=${encodeURIComponent(identity)}`) : Promise.resolve(null)
+        ]);
+
+        const cat = await catRes.json();
+        const my = myRes ? await myRes.json() : { ok: true, items: [] };
+
+        if (!cat.ok) throw new Error("catalog_error");
+
+        const diamonds = Number(localStorage.getItem("totalDiamonds") || 0);
+
+        let html = "";
+        html += `<div style="margin-bottom:16px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <h3 style="margin:0;color:#fff;">Do‘kon</h3>
+            <div style="color:#00f2ff;font-weight:700;">💎 ${diamonds}</div>
+          </div>
+          <div style="opacity:0.7;color:#fff;font-size:12px;margin-top:6px;">
+            Kuponlar serverda tekshiriladi. QR + Kod sertifikat ko‘rinishida beriladi.
+          </div>
+        </div>`;
+
+        cat.coupons.forEach(c => {
+          const disabled = diamonds < Number(c.cost_diamonds);
+          html += `
+            <div style="padding:12px;border:1px solid rgba(255,255,255,0.12);border-radius:14px;margin-bottom:10px;">
+              <div style="display:flex;justify-content:space-between;gap:10px;align-items:center;">
+                <div style="color:#fff;font-weight:800;">${c.title}</div>
+                <div style="color:#ffd700;font-weight:800;">${c.cost_diamonds} 💎</div>
+              </div>
+              <div style="color:#fff;opacity:0.7;font-size:12px;margin-top:6px;">${c.description || ""}</div>
+              <button
+                style="margin-top:10px;width:100%;padding:12px;border-radius:12px;border:1px solid rgba(255,255,255,0.12);
+                  background:${disabled ? "rgba(255,255,255,0.06)" : "linear-gradient(135deg,#ff5252,#b71c1c)"};
+                  color:#fff;font-weight:900;cursor:${disabled ? "not-allowed" : "pointer"};"
+                ${disabled ? "disabled" : ""}
+                onclick="exchangeCoupon(${c.id})"
+              >
+                ${disabled ? "💎 Yetarli emas" : "Almashtirish"}
+              </button>
+            </div>
+          `;
+        });
+
+        html += `<hr style="border:0;border-top:1px solid rgba(255,255,255,0.12);margin:16px 0;">`;
+        html += `<h3 style="margin:0 0 10px;color:#fff;">Mening kuponlarim</h3>`;
+
+        if (!identity) {
+          html += `<p style="color:#ffb74d;opacity:0.95;font-size:13px;">
+            Kuponlar ro‘yxati uchun registratsiya kerak (guest ham bo‘ladi).
+          </p>`;
+        } else if (!my.ok || my.items.length === 0) {
+          html += `<p style="opacity:0.7;color:#fff;">Hozircha kupon yo‘q.</p>`;
+        } else {
+          my.items.forEach(it => {
+            const st = (it.status || "active").toUpperCase();
+            html += `
+              <div style="padding:12px;border:1px solid rgba(255,255,255,0.12);border-radius:14px;margin-bottom:10px;color:#fff;">
+                <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;">
+                  <div style="font-weight:800;">${it.title}</div>
+                  <div style="opacity:0.9;font-size:12px;">${st}</div>
+                </div>
+                <div style="margin-top:8px;font-size:13px;">
+                  Voucher Code: <b style="color:#ffd700;">${it.voucher_code}</b>
+                </div>
+                <div style="opacity:0.7;font-size:12px;margin-top:6px;">
+                  QR-ni ko‘rish uchun “Sertifikat” tugmasini bosing.
+                </div>
+                <button
+                  style="margin-top:10px;width:100%;padding:12px;border-radius:12px;border:1px solid rgba(255,255,255,0.12);
+                    background:rgba(255,255,255,0.08);color:#fff;font-weight:900;cursor:pointer;"
+                  onclick="showCertificate('${it.voucher_code}', null, '${it.title}')"
+                >
+                  Sertifikat
+                </button>
+              </div>
+            `;
+          });
+        }
+
+        wrap.innerHTML = html;
+      } catch (e) {
+        wrap.innerHTML = `<p style="color:#ff5252;">Kuponlarni yuklab bo‘lmadi.</p>`;
+        console.error(e);
+      }
+    }
+
+    async function exchangeCoupon(couponId) {
+      const identity = localStorage.getItem("tomama_identity");
+      if (!identity) {
+        alert("Avval registratsiya kerak.");
+        return;
+      }
+
+      try {
+        const res = await fetch(`${SERVER_URL}/coupons/exchange`, {
+          method: "POST",
+          headers: {"Content-Type":"application/json"},
+          body: JSON.stringify({ identity, coupon_id: couponId })
+        });
+
+        const data = await res.json();
+
+        if (!data.ok) {
+          if (data.error === "NOT_ENOUGH_DIAMONDS") {
+            alert(`💎 Yetarli emas. Kerak: ${data.need}, Sizda: ${data.have}`);
+            return;
+          }
+          alert("Kupon olishda xatolik.");
+          return;
+        }
+
+        // Local diamonds sync
+        if (typeof data.certificate?.diamonds_left === "number") {
+          localStorage.setItem("totalDiamonds", String(data.certificate.diamonds_left));
+          updateUIStats();
+        }
+
+        // Show certificate (QR + Code)
+        showCertificate(
+          data.certificate.voucher_code,
+          data.certificate.qr_data_url,
+          data.certificate.title
+        );
+
+        // reload list
+        loadCoupons();
+      } catch (e) {
+        console.error(e);
+        alert("Server bilan aloqa yo‘q.");
+      }
+    }
+
+    function showCertificate(code, qrDataUrl, title) {
+      let modal = document.getElementById("certModal");
+      if (!modal) {
+        modal = document.createElement("div");
+        modal.id = "certModal";
+        modal.style.cssText = `
+          position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.75);
+          display:flex;align-items:center;justify-content:center;padding:18px;
+        `;
+        modal.innerHTML = `
+          <div style="width:100%;max-width:420px;background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.18);
+            border-radius:18px;padding:16px;color:#fff;backdrop-filter:blur(12px);">
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;">
+              <div>
+                <div id="certTitle" style="font-weight:900;font-size:16px;"></div>
+                <div style="opacity:0.8;font-size:12px;margin-top:4px;">Sertifikat (QR + Voucher Code)</div>
+              </div>
+              <button onclick="document.getElementById('certModal').remove()"
+                style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.12);
+                color:#fff;border-radius:10px;padding:8px 10px;cursor:pointer;">Yopish</button>
+            </div>
+
+            <div style="margin-top:14px;display:flex;gap:14px;align-items:center;">
+              <div style="width:140px;height:140px;border-radius:14px;background:#fff;display:flex;align-items:center;justify-content:center;">
+                <img id="certQR" src="" style="width:130px;height:130px;">
+              </div>
+              <div style="flex:1;">
+                <div style="opacity:0.8;font-size:12px;">Voucher Code</div>
+                <div id="certCode" style="font-weight:950;font-size:18px;color:#ffd700;margin-top:4px;"></div>
+                <button onclick="navigator.clipboard?.writeText(document.getElementById('certCode').innerText)"
+                  style="margin-top:10px;width:100%;padding:10px;border-radius:12px;border:1px solid rgba(255,255,255,0.12);
+                  background:rgba(255,255,255,0.08);color:#fff;font-weight:900;cursor:pointer;">Koddan nusxa olish</button>
+              </div>
+            </div>
+
+            <div style="margin-top:12px;opacity:0.75;font-size:12px;">
+              QR skan qilinsa kupon “Used” bo‘ladi (bir martalik).
+            </div>
+          </div>
+        `;
+        document.body.appendChild(modal);
+      } else {
+        document.body.appendChild(modal);
+      }
+
+      document.getElementById("certTitle").innerText = title || "Kupon Sertifikati";
+      document.getElementById("certCode").innerText = code || "";
+      const img = document.getElementById("certQR");
+      img.src = qrDataUrl || "data:image/png;base64,iVBORw0KGgo=";
+    }
+
+    // ------------------------------
+    // MENYU FUNKSIYALARI
+    // ------------------------------
     function startGame() {
-      // Guest bo'lsa, ism majburiy
-      const ok = ensureNameIfGuest(true);
-      if (!ok) return;
-
       tg?.HapticFeedback?.impactOccurred("medium");
-
-      // Register o'yinni blok qilmasin
-      autoRegister().catch(err => console.warn("Register xato, o'yin davom etadi:", err));
-
       document.getElementById("mainMenu").classList.add("hidden");
       document.getElementById("gameCanvas").classList.remove("hidden");
-      window.startGameLoop?.();
+      if (window.startGameLoop) window.startGameLoop();
     }
 
     function showRanking() {
@@ -304,6 +473,7 @@
       tg?.BackButton.show();
       document.getElementById("mainMenu").classList.add("hidden");
       document.getElementById("couponsMenu").classList.remove("hidden");
+      loadCoupons();
     }
 
     function hideAllMenus() {
@@ -312,21 +482,9 @@
       document.getElementById("mainMenu").classList.remove("hidden");
       updateUIStats();
     }
-
-    // ---------- INIT ----------
-    window.addEventListener("load", () => {
-      // Guest bo'lsa, kirishda ham ism so'raydi (lekin start bosganda ham tekshiramiz)
-      ensureNameIfGuest(false);
-
-      updateUIStats();
-
-      // Registratsiya menyuda ham ishlasin, lekin o'yinni blok qilmasin
-      autoRegister().catch(err => console.warn("Register error:", err));
-    });
   </script>
 
   <!-- O'yin logikasi -->
   <script src="game.js"></script>
-
 </body>
 </html>
