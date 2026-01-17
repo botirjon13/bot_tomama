@@ -483,67 +483,124 @@
     });
   }
 
-  function showCertificate({ title, code, qrDataUrl }) {
-    let modal = document.getElementById("certModal");
-    if (!modal) {
-      modal = document.createElement("div");
-      modal.id = "certModal";
-      modal.className = "cpn-modal";
-      modal.innerHTML = `
-        <div class="cpn-modal-card">
-          <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;">
-            <div>
-              <div id="certTitle" style="font-weight:950;font-size:16px;"></div>
-              <div style="opacity:0.8;font-size:12px;margin-top:4px;">Sertifikat (QR + Voucher Code)</div>
-            </div>
-            <button onclick="document.getElementById('certModal').remove()"
-              style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.12);
-              color:#fff;border-radius:12px;padding:8px 10px;cursor:pointer;font-weight:900;">Yopish</button>
+ function showCertificate({ title, code, qrDataUrl }) {
+  let modal = document.getElementById("certModal");
+  if (!modal) {
+    modal = document.createElement("div");
+    modal.id = "certModal";
+    modal.className = "cpn-modal";
+    modal.innerHTML = `
+      <div class="cpn-modal-card">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;">
+          <div>
+            <div id="certTitle" style="font-weight:950;font-size:16px;"></div>
+            <div style="opacity:0.8;font-size:12px;margin-top:4px;">Sertifikat (QR + Voucher Code)</div>
           </div>
+          <button onclick="document.getElementById('certModal').remove()"
+            style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.12);
+            color:#fff;border-radius:12px;padding:8px 10px;cursor:pointer;font-weight:900;">Yopish</button>
+        </div>
 
-          <div style="margin-top:14px;display:flex;gap:14px;align-items:center;">
-            <div class="cpn-qr-box">
-              <img id="certQR" src="" alt="QR">
-            </div>
-            <div style="flex:1;">
-              <div style="opacity:0.8;font-size:12px;">Voucher Code</div>
-              <div id="certCode" style="font-weight:950;font-size:18px;color:var(--accent-gold);margin-top:4px;"></div>
+        <div style="margin-top:14px;display:flex;gap:14px;align-items:center;">
+          <div class="cpn-qr-box">
+            <img id="certQR" src="" alt="QR">
+          </div>
+          <div style="flex:1;">
+            <div style="opacity:0.8;font-size:12px;">Voucher Code</div>
+            <div id="certCode" style="font-weight:950;font-size:18px;color:var(--accent-gold);margin-top:4px;"></div>
 
-              <button onclick="navigator.clipboard?.writeText(document.getElementById('certCode').innerText)"
-                class="cpn-btn cpn-btn-ghost"
-                style="margin-top:10px;width:100%;">
-                Koddan nusxa olish
-              </button>
+            <button onclick="navigator.clipboard?.writeText(document.getElementById('certCode').innerText)"
+              class="cpn-btn cpn-btn-ghost"
+              style="margin-top:10px;width:100%;">
+              Koddan nusxa olish
+            </button>
 
-              <div style="margin-top:10px;opacity:0.75;font-size:12px;line-height:1.4;">
-                QR bo‘lmasa: kupon kodi bilan do‘konda tekshirish mumkin.
-              </div>
+            <button id="btnDownloadCert"
+              class="cpn-btn cpn-btn-primary"
+              style="margin-top:10px;width:100%;">
+              Sertifikatni yuklab olish (PDF/PNG)
+            </button>
+
+            <div style="margin-top:10px;opacity:0.75;font-size:12px;line-height:1.4;">
+              Eslatma: Yuklab olingandan so‘ng kupon holati <b>USED</b> bo‘ladi.
             </div>
           </div>
         </div>
-      `;
-      document.body.appendChild(modal);
-    } else {
-      document.body.appendChild(modal);
-    }
-
-    document.getElementById("certTitle").innerText = title || "Kupon Sertifikati";
-    document.getElementById("certCode").innerText = code || "";
-
-    const img = document.getElementById("certQR");
-    if (qrDataUrl) {
-      img.src = qrDataUrl;
-    } else {
-      // “No QR” holatida chiroyli placeholder
-      img.src =
-        "data:image/svg+xml;charset=utf-8," +
-        encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="140" height="140">
-          <rect width="140" height="140" rx="18" ry="18" fill="#ffffff"/>
-          <text x="70" y="72" text-anchor="middle" font-family="Arial" font-size="14" fill="#111">QR yo‘q</text>
-          <text x="70" y="92" text-anchor="middle" font-family="Arial" font-size="11" fill="#444">Koddan foydalaning</text>
-        </svg>`);
-    }
+      </div>
+    `;
+    document.body.appendChild(modal);
+  } else {
+    document.body.appendChild(modal);
   }
+
+  document.getElementById("certTitle").innerText = title || "Kupon Sertifikati";
+  document.getElementById("certCode").innerText = code || "";
+
+  const img = document.getElementById("certQR");
+
+  // Agar QR hozir yo'q bo'lsa — placeholder
+  if (qrDataUrl) {
+    img.src = qrDataUrl;
+  } else {
+    img.src =
+      "data:image/svg+xml;charset=utf-8," +
+      encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="140" height="140">
+        <rect width="140" height="140" rx="18" ry="18" fill="#ffffff"/>
+        <text x="70" y="72" text-anchor="middle" font-family="Arial" font-size="14" fill="#111">QR yuklanadi</text>
+        <text x="70" y="92" text-anchor="middle" font-family="Arial" font-size="11" fill="#444">Download bosing</text>
+      </svg>`);
+  }
+
+  // Download bosilganda: serverdan QR olib, statusni USED qiladi va PNG qilib yuklaydi
+  const btn = document.getElementById("btnDownloadCert");
+  btn.onclick = async () => {
+    btn.disabled = true;
+    btn.innerText = "Yuklanmoqda...";
+
+    try {
+      const identity = localStorage.getItem("tomama_identity");
+      if (!identity) {
+        alert("Registratsiya topilmadi.");
+        return;
+      }
+
+      const voucher_code = document.getElementById("certCode").innerText;
+
+      const res = await fetch(`${SERVER_URL}/coupons/download`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ identity, voucher_code })
+      });
+
+      const data = await res.json();
+      if (!data.ok) {
+        alert("Download xatolik.");
+        return;
+      }
+
+      const cert = data.certificate;
+      document.getElementById("certTitle").innerText = cert.title || title || "Kupon Sertifikati";
+      document.getElementById("certCode").innerText = cert.voucher_code || voucher_code;
+      document.getElementById("certQR").src = cert.qr_data_url;
+
+      // PNG sifatida yuklab beramiz
+      await downloadCertificatePNG({
+        title: cert.title || title || "Kupon Sertifikati",
+        code: cert.voucher_code || voucher_code,
+        qrDataUrl: cert.qr_data_url
+      });
+
+      // status yangilansin
+      await loadCoupons();
+    } catch (e) {
+      console.error(e);
+      alert("Server bilan aloqa yo‘q.");
+    } finally {
+      btn.disabled = false;
+      btn.innerText = "Sertifikatni yuklab olish (PDF/PNG)";
+    }
+  };
+}
      // HTML escape helper
   function escapeHtml(str) {
     return String(str || "")
@@ -554,6 +611,100 @@
       .replaceAll("'", "&#039;");
   }
 
+    // Menu Functions
+    async function downloadCertificatePNG({ title, code, qrDataUrl }) {
+  // QR rasmni yuklab, canvasga chizamiz
+  const qrImg = await loadImage(qrDataUrl);
+
+  const w = 1080, h = 650;
+  const canvas = document.createElement("canvas");
+  canvas.width = w;
+  canvas.height = h;
+  const c = canvas.getContext("2d");
+
+  // fon (premium)
+  c.fillStyle = "#0b0b0f";
+  c.fillRect(0, 0, w, h);
+
+  // gradient glow
+  const g = c.createLinearGradient(0, 0, w, h);
+  g.addColorStop(0, "rgba(255,82,82,0.35)");
+  g.addColorStop(0.5, "rgba(0,242,255,0.18)");
+  g.addColorStop(1, "rgba(255,215,0,0.22)");
+  c.fillStyle = g;
+  c.fillRect(0, 0, w, h);
+
+  // glass card
+  roundRect(c, 60, 70, 960, 510, 26);
+  c.fillStyle = "rgba(255,255,255,0.10)";
+  c.fill();
+  c.strokeStyle = "rgba(255,255,255,0.18)";
+  c.lineWidth = 2;
+  c.stroke();
+
+  // Title
+  c.fillStyle = "#ffffff";
+  c.font = "900 42px Arial";
+  c.fillText(title, 110, 155);
+
+  // Subtitle
+  c.fillStyle = "rgba(255,255,255,0.75)";
+  c.font = "600 22px Arial";
+  c.fillText("Sertifikat (QR + Voucher Code)", 110, 195);
+
+  // QR box
+  roundRect(c, 110, 245, 260, 260, 24);
+  c.fillStyle = "#ffffff";
+  c.fill();
+  c.drawImage(qrImg, 125, 260, 230, 230);
+
+  // Code
+  c.fillStyle = "rgba(255,255,255,0.75)";
+  c.font = "700 22px Arial";
+  c.fillText("Voucher Code", 420, 285);
+
+  c.fillStyle = "#ffd700";
+  c.font = "900 44px Arial";
+  c.fillText(code, 420, 340);
+
+  // Note
+  c.fillStyle = "rgba(255,255,255,0.70)";
+  c.font = "600 18px Arial";
+  c.fillText("Yuklab olingan kupon USED holatiga o‘tadi.", 420, 385);
+
+  // Footer
+  c.fillStyle = "rgba(255,255,255,0.55)";
+  c.font = "600 16px Arial";
+  c.fillText("Tomama 2026", 110, 540);
+
+  // Download
+  const a = document.createElement("a");
+  a.href = canvas.toDataURL("image/png");
+  a.download = `tomama-certificate-${code}.png`;
+  a.click();
+}
+
+function roundRect(ctx, x, y, w, h, r) {
+  const rr = Math.min(r, w / 2, h / 2);
+  ctx.beginPath();
+  ctx.moveTo(x + rr, y);
+  ctx.arcTo(x + w, y, x + w, y + h, rr);
+  ctx.arcTo(x + w, y + h, x, y + h, rr);
+  ctx.arcTo(x, y + h, x, y, rr);
+  ctx.arcTo(x, y, x + w, y, rr);
+  ctx.closePath();
+}
+
+function loadImage(src) {
+  return new Promise((resolve, reject) => {
+    const im = new Image();
+    im.onload = () => resolve(im);
+    im.onerror = reject;
+    im.src = src;
+  });
+}
+
+    
     // =========================
     // Menu Functions
     // =========================
