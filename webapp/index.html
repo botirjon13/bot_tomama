@@ -292,163 +292,273 @@
     // =========================
     // Coupons
     // =========================
-    async function loadCoupons() {
-      const identity = localStorage.getItem("tomama_identity");
-      const wrap = document.getElementById("couponList");
-      if (!wrap) return;
+    <script>
+  // ... sizning boshqa kodlaringiz ...
 
-      wrap.innerHTML = "<p style='opacity:0.7'>Yuklanmoqda...</p>";
+  // ------------------------------
+  // COUPONS (PREMIUM UI)
+  // ------------------------------
+  async function loadCoupons() {
+    const identity = localStorage.getItem("tomama_identity");
+    const wrap = document.getElementById("couponList");
+    if (!wrap) return;
 
-      try {
-        const [catRes, myRes] = await Promise.all([
-          fetch(`${SERVER_URL}/coupons`),
-          identity ? fetch(`${SERVER_URL}/my/coupons?identity=${encodeURIComponent(identity)}`) : Promise.resolve(null)
-        ]);
+    // Premium shimmer loader
+    wrap.innerHTML = `
+      <div class="cpn-wrap">
+        <div class="cpn-topbar">
+          <h3 class="cpn-title">Do‘kon</h3>
+          <div class="cpn-balance"><span>💎</span><strong>...</strong></div>
+        </div>
+        <div class="cpn-shimmer"></div>
+        <div class="cpn-shimmer"></div>
+        <div class="cpn-shimmer"></div>
+        <div class="cpn-section">
+          <h3>Mening kuponlarim</h3>
+          <div class="cpn-shimmer"></div>
+        </div>
+      </div>
+    `;
 
-        const cat = await catRes.json();
-        const my = myRes ? await myRes.json() : { ok: true, items: [] };
-        if (!cat.ok) throw new Error("catalog_error");
+    try {
+      const [catRes, myRes] = await Promise.all([
+        fetch(`${SERVER_URL}/coupons`),
+        identity ? fetch(`${SERVER_URL}/my/coupons?identity=${encodeURIComponent(identity)}`) : Promise.resolve(null)
+      ]);
 
-        const diamonds = Number(localStorage.getItem("totalDiamonds") || 0);
+      const cat = await catRes.json();
+      const my = myRes ? await myRes.json() : { ok: true, items: [] };
+      if (!cat.ok) throw new Error("catalog_error");
 
-        let html = `
-          <div class="coupon-head">
-            <div>
-              <div class="coupon-head-title">Do‘kon</div>
-              <div class="coupon-head-sub">QR + Voucher Code sertifikat ko‘rinishida beriladi</div>
+      const diamonds = Number(localStorage.getItem("totalDiamonds") || 0);
+
+      let html = `
+        <div class="cpn-wrap">
+          <div class="cpn-topbar">
+            <h3 class="cpn-title">Do‘kon</h3>
+            <div class="cpn-balance">
+              <span>💎</span>
+              <strong>${diamonds}</strong>
             </div>
-            <div class="diamond-badge">💎 ${diamonds}</div>
           </div>
-        `;
 
-        // Catalog
-        cat.coupons.forEach(c => {
-          const disabled = diamonds < Number(c.cost_diamonds);
-          html += `
-            <div class="coupon-card">
-              <div class="coupon-card-top">
-                <div class="coupon-card-title">${c.title}</div>
-                <div class="coupon-card-cost">${c.cost_diamonds} 💎</div>
+          <div class="cpn-note">
+            Kuponlar serverda tekshiriladi. Sertifikat ko‘rinishida: <b>QR + Voucher Code</b>.
+          </div>
+
+          <div class="cpn-grid">
+      `;
+
+      cat.coupons.forEach((c) => {
+        const cost = Number(c.cost_diamonds || 0);
+        const disabled = diamonds < cost;
+
+        html += `
+          <div class="cpn-card">
+            <div class="cpn-row">
+              <div style="min-width:0;">
+                <div class="cpn-badge"><span class="dot"></span> Sertifikat</div>
+                <p class="cpn-name">${escapeHtml(c.title || "")}</p>
               </div>
-              <div class="coupon-card-desc">${c.description || ""}</div>
-              <button class="coupon-btn ${disabled ? "coupon-btn-disabled" : ""}"
-                ${disabled ? "disabled" : ""} onclick="exchangeCoupon(${c.id})">
+              <div class="cpn-price">${cost} 💎</div>
+            </div>
+
+            <div class="cpn-desc">${escapeHtml(c.description || "")}</div>
+
+            <div class="cpn-actions">
+              <button
+                class="cpn-btn cpn-btn-primary"
+                ${disabled ? "disabled" : ""}
+                onclick="exchangeCoupon(${c.id})"
+              >
                 ${disabled ? "💎 Yetarli emas" : "Almashtirish"}
               </button>
             </div>
-          `;
-        });
-
-        // My coupons
-        html += `<div class="divider"></div><div class="coupon-head-title">Mening kuponlarim</div>`;
-
-        if (!identity) {
-          html += `<p style="color:#ffb74d;opacity:0.95;font-size:13px;margin-top:10px;">
-            Kuponlar ro‘yxati uchun registratsiya kerak (guest ham bo‘ladi).
-          </p>`;
-        } else if (!my.ok || my.items.length === 0) {
-          html += `<p style="opacity:0.75;color:#fff;margin-top:10px;">Hozircha kupon yo‘q.</p>`;
-        } else {
-          my.items.forEach(it => {
-            const st = (it.status || "active").toUpperCase();
-            html += `
-              <div class="coupon-card">
-                <div class="coupon-card-top">
-                  <div class="coupon-card-title">${it.title}</div>
-                  <div class="coupon-status">${st}</div>
-                </div>
-                <div class="coupon-code">Voucher Code: <b>${it.voucher_code}</b></div>
-                <button class="coupon-btn coupon-btn-ghost"
-                  onclick="showCertificate('${it.voucher_code}', null, '${it.title}')">
-                  Sertifikat
-                </button>
-              </div>
-            `;
-          });
-        }
-
-        wrap.innerHTML = html;
-      } catch (e) {
-        wrap.innerHTML = `<p style="color:#ff5252;">Kuponlarni yuklab bo‘lmadi.</p>`;
-        console.error(e);
-      }
-    }
-
-    async function exchangeCoupon(couponId) {
-      const identity = localStorage.getItem("tomama_identity");
-      if (!identity) { alert("Avval registratsiya kerak."); return; }
-
-      try {
-        const res = await fetch(`${SERVER_URL}/coupons/exchange`, {
-          method: "POST",
-          headers: {"Content-Type":"application/json"},
-          body: JSON.stringify({ identity, coupon_id: couponId })
-        });
-        const data = await res.json();
-
-        if (!data.ok) {
-          if (data.error === "NOT_ENOUGH_DIAMONDS") {
-            alert(`💎 Yetarli emas. Kerak: ${data.need}, Sizda: ${data.have}`);
-            return;
-          }
-          alert("Kupon olishda xatolik.");
-          return;
-        }
-
-        if (typeof data.certificate?.diamonds_left === "number") {
-          localStorage.setItem("totalDiamonds", String(data.certificate.diamonds_left));
-          updateUIStats();
-        }
-
-        showCertificate(data.certificate.voucher_code, data.certificate.qr_data_url, data.certificate.title);
-        loadCoupons();
-      } catch (e) {
-        console.error(e);
-        alert("Server bilan aloqa yo‘q.");
-      }
-    }
-
-    function showCertificate(code, qrDataUrl, title) {
-      let modal = document.getElementById("certModal");
-      if (!modal) {
-        modal = document.createElement("div");
-        modal.id = "certModal";
-        modal.className = "cert-overlay";
-        modal.innerHTML = `
-          <div class="cert-card">
-            <div class="cert-top">
-              <div>
-                <div id="certTitle" class="cert-title"></div>
-                <div class="cert-sub">Sertifikat (QR + Voucher Code)</div>
-              </div>
-              <button class="cert-close" onclick="document.getElementById('certModal').remove()">Yopish</button>
-            </div>
-
-            <div class="cert-body">
-              <div class="cert-qr">
-                <img id="certQR" src="" alt="qr">
-              </div>
-              <div class="cert-info">
-                <div class="cert-label">Voucher Code</div>
-                <div id="certCode" class="cert-code"></div>
-                <button class="coupon-btn coupon-btn-ghost" onclick="navigator.clipboard?.writeText(document.getElementById('certCode').innerText)">
-                  Koddan nusxa olish
-                </button>
-              </div>
-            </div>
-
-            <div class="cert-note">QR skan qilinsa kupon “Used” bo‘ladi (bir martalik).</div>
           </div>
         `;
-        document.body.appendChild(modal);
+      });
+
+      html += `</div>`;
+
+      // My coupons
+      html += `
+        <div class="cpn-section">
+          <div class="cpn-topbar" style="margin-bottom:10px;">
+            <h3 class="cpn-title" style="font-size:16px;">Mening kuponlarim</h3>
+            <div class="cpn-pill">🔒 Bir martalik</div>
+          </div>
+      `;
+
+      if (!identity) {
+        html += `<div class="cpn-empty" style="color:#ffcc80; opacity:0.95;">
+          Kuponlar ro‘yxati uchun registratsiya kerak (guest ham bo‘ladi).
+        </div>`;
+      } else if (!my.ok || !my.items?.length) {
+        html += `<div class="cpn-empty">Hozircha kupon yo‘q.</div>`;
       } else {
-        document.body.appendChild(modal);
+        my.items.forEach((it) => {
+          const st = String(it.status || "active").toUpperCase();
+          const badge = st === "USED" ? "✅ Ishlatilgan" : "🟢 Aktiv";
+
+          html += `
+            <div class="cpn-card" style="padding:14px;">
+              <div class="cpn-row">
+                <div style="min-width:0;">
+                  <div class="cpn-badge"><span class="dot"></span> ${badge}</div>
+                  <p class="cpn-name">${escapeHtml(it.title || "")}</p>
+                </div>
+                <div class="cpn-pill">${st}</div>
+              </div>
+
+              <div class="cpn-desc">
+                Voucher Code: <b style="color:var(--accent-gold);">${escapeHtml(it.voucher_code || "")}</b>
+              </div>
+
+              <div class="cpn-actions">
+                <button class="cpn-btn cpn-btn-ghost" onclick="openCertificateByCode('${encodeURIComponent(it.voucher_code || "")}')">
+                  Sertifikatni ko‘rish
+                </button>
+              </div>
+            </div>
+          `;
+        });
       }
 
-      document.getElementById("certTitle").innerText = title || "Kupon Sertifikati";
-      document.getElementById("certCode").innerText = code || "";
-      document.getElementById("certQR").src = qrDataUrl || "data:image/png;base64,iVBORw0KGgo=";
+      html += `</div></div>`;
+      wrap.innerHTML = html;
+    } catch (e) {
+      console.error(e);
+      wrap.innerHTML = `<p style="color:#ff5252; text-align:center;">Kuponlarni yuklab bo‘lmadi.</p>`;
     }
+  }
+
+  async function exchangeCoupon(couponId) {
+    const identity = localStorage.getItem("tomama_identity");
+    if (!identity) {
+      alert("Avval registratsiya kerak.");
+      return;
+    }
+
+    try {
+      const res = await fetch(`${SERVER_URL}/coupons/exchange`, {
+        method: "POST",
+        headers: {"Content-Type":"application/json"},
+        body: JSON.stringify({ identity, coupon_id: couponId })
+      });
+      const data = await res.json();
+
+      if (!data.ok) {
+        if (data.error === "NOT_ENOUGH_DIAMONDS") {
+          alert(`💎 Yetarli emas. Kerak: ${data.need}, Sizda: ${data.have}`);
+          return;
+        }
+        alert("Kupon olishda xatolik.");
+        return;
+      }
+
+      if (typeof data.certificate?.diamonds_left === "number") {
+        localStorage.setItem("totalDiamonds", String(data.certificate.diamonds_left));
+        updateUIStats();
+      }
+
+      showCertificate({
+        title: data.certificate.title,
+        code: data.certificate.voucher_code,
+        qrDataUrl: data.certificate.qr_data_url,
+      });
+
+      // ro‘yxatni yangilash
+      loadCoupons();
+    } catch (e) {
+      console.error(e);
+      alert("Server bilan aloqa yo‘q.");
+    }
+  }
+
+  // My coupon: hozir server /my/coupons faqat code qaytaradi.
+  // QR-ni ko‘rish uchun eng oson yo‘l: exchange natijasida darhol modal ko‘rsatish.
+  // Agar siz “eski kuponlar” uchun ham QR ko‘rsatmoqchi bo‘lsangiz, serverga endpoint qo‘shamiz (keyingi bosqich).
+  function openCertificateByCode(voucherCodeEnc) {
+    const code = decodeURIComponent(voucherCodeEnc || "");
+    showCertificate({
+      title: "Kupon Sertifikati",
+      code,
+      qrDataUrl: null
+    });
+  }
+
+  function showCertificate({ title, code, qrDataUrl }) {
+    let modal = document.getElementById("certModal");
+    if (!modal) {
+      modal = document.createElement("div");
+      modal.id = "certModal";
+      modal.className = "cpn-modal";
+      modal.innerHTML = `
+        <div class="cpn-modal-card">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;">
+            <div>
+              <div id="certTitle" style="font-weight:950;font-size:16px;"></div>
+              <div style="opacity:0.8;font-size:12px;margin-top:4px;">Sertifikat (QR + Voucher Code)</div>
+            </div>
+            <button onclick="document.getElementById('certModal').remove()"
+              style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.12);
+              color:#fff;border-radius:12px;padding:8px 10px;cursor:pointer;font-weight:900;">Yopish</button>
+          </div>
+
+          <div style="margin-top:14px;display:flex;gap:14px;align-items:center;">
+            <div class="cpn-qr-box">
+              <img id="certQR" src="" alt="QR">
+            </div>
+            <div style="flex:1;">
+              <div style="opacity:0.8;font-size:12px;">Voucher Code</div>
+              <div id="certCode" style="font-weight:950;font-size:18px;color:var(--accent-gold);margin-top:4px;"></div>
+
+              <button onclick="navigator.clipboard?.writeText(document.getElementById('certCode').innerText)"
+                class="cpn-btn cpn-btn-ghost"
+                style="margin-top:10px;width:100%;">
+                Koddan nusxa olish
+              </button>
+
+              <div style="margin-top:10px;opacity:0.75;font-size:12px;line-height:1.4;">
+                QR bo‘lmasa: kupon kodi bilan do‘konda tekshirish mumkin.
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(modal);
+    } else {
+      document.body.appendChild(modal);
+    }
+
+    document.getElementById("certTitle").innerText = title || "Kupon Sertifikati";
+    document.getElementById("certCode").innerText = code || "";
+
+    const img = document.getElementById("certQR");
+    if (qrDataUrl) {
+      img.src = qrDataUrl;
+    } else {
+      // “No QR” holatida chiroyli placeholder
+      img.src =
+        "data:image/svg+xml;charset=utf-8," +
+        encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="140" height="140">
+          <rect width="140" height="140" rx="18" ry="18" fill="#ffffff"/>
+          <text x="70" y="72" text-anchor="middle" font-family="Arial" font-size="14" fill="#111">QR yo‘q</text>
+          <text x="70" y="92" text-anchor="middle" font-family="Arial" font-size="11" fill="#444">Koddan foydalaning</text>
+        </svg>`);
+    }
+  }
+
+  // HTML escape helper
+  function escapeHtml(str) {
+    return String(str || "")
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#039;");
+  }
+</script>
 
     // =========================
     // Menu Functions
