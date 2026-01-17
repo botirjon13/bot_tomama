@@ -13,7 +13,7 @@ let imagesToLoad = 7; // basket, tomato, brand, snow, bomb, magnet, shield
 let loadedCount = 0;
 let assetsLoaded = false;
 
-const path = 'assaets/'; // Papka nomi to'g'riligini tekshiring (assets bo'lishi mumkin)
+const path = 'assaets/';
 
 const loadAsset = (key, src) => {
     assets[key] = new Image();
@@ -22,14 +22,13 @@ const loadAsset = (key, src) => {
     assets[key].onerror = () => { console.error(key + " yuklanmadi"); loadedCount++; };
 };
 
-// ASSETS yuklash
 loadAsset('basket', 'basket.png');
 loadAsset('tomato', 'products/tomatoFon.png');
 loadAsset('brand', 'products/tomato.png');
 loadAsset('snow', 'products/snow.png');
 loadAsset('bomb', 'products/bomb.png');
-loadAsset('magnet', 'products/magnet.png'); // Yangi
-loadAsset('shield', 'products/shield.png'); // Yangi
+loadAsset('magnet', 'products/magnet.png');
+loadAsset('shield', 'products/shield.png');
 
 let basket = { x: canvas.width / 2 - 60, y: canvas.height - 160, width: 120, height: 85, originalWidth: 120 };
 let items = [];
@@ -37,7 +36,6 @@ let score = 0, currentDiamonds = 0, lives = 3, combo = 0;
 let isGameOver = false;
 let spawnInterval = null;
 
-// Power-up taymerlari
 let slowModeTimer = 0, magnetTimer = 0, shieldActive = false, shakeTimer = 0;
 let gameSpeed = 7;
 
@@ -46,12 +44,12 @@ function spawnItem() {
 
     let rand = Math.random();
     let type = 'tomato';
-    
+
     if (rand < 0.12) type = 'bomb';
-    else if (rand < 0.18) type = 'brand'; // Olmos
-    else if (rand < 0.22) type = 'snow';  // Muzlatish
-    else if (rand < 0.25) type = 'magnet'; // Magnit
-    else if (rand < 0.28) type = 'shield'; // Qalqon
+    else if (rand < 0.18) type = 'brand';
+    else if (rand < 0.22) type = 'snow';
+    else if (rand < 0.25) type = 'magnet';
+    else if (rand < 0.28) type = 'shield';
 
     items.push({
         x: Math.random() * (canvas.width - 65),
@@ -67,7 +65,6 @@ function spawnItem() {
 function update() {
     if (isGameOver) return;
 
-    // 1. Koordinatalarni saqlash
     ctx.save();
 
     let sx = 0, sy = 0;
@@ -77,11 +74,9 @@ function update() {
         shakeTimer--;
     }
 
-    // 2. MUHIM: Har doim butun ekranni tozalash (silkinishdan oldin)
-    ctx.setTransform(1, 0, 0, 1, 0, 0); // Transformatsiyani nolga tushirish
-    ctx.clearRect(0, 0, canvas.width, canvas.height); 
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // 3. Endi silkinishni qo'llash
     ctx.translate(sx, sy);
 
     let currentGlobalSpeed = (gameSpeed + (score / 250)) * (slowModeTimer > 0 ? 0.5 : 1);
@@ -91,19 +86,17 @@ function update() {
         ctx.fillStyle = "rgba(135, 206, 250, 0.2)";
         ctx.fillRect(-50, -50, canvas.width + 100, canvas.height + 100);
     }
-    
+
     if (magnetTimer > 0) magnetTimer--;
 
-    // Savatni chizish
     if (assetsLoaded && assets.basket.complete) {
         ctx.drawImage(assets.basket, basket.x, basket.y, basket.width, basket.height);
-        
+
         if (shieldActive) {
             ctx.beginPath();
             ctx.strokeStyle = '#00f2ff';
             ctx.lineWidth = 4;
-            // Qalqonni savat bilan birga chizish
-            ctx.arc(basket.x + basket.width/2, basket.y + basket.height/2, 70, 0, Math.PI * 2);
+            ctx.arc(basket.x + basket.width / 2, basket.y + basket.height / 2, 70, 0, Math.PI * 2);
             ctx.stroke();
         }
     }
@@ -112,7 +105,7 @@ function update() {
         let p = items[i];
 
         if (magnetTimer > 0 && (p.type === 'tomato' || p.type === 'brand')) {
-            let dx = (basket.x + basket.width/2) - (p.x + p.width/2);
+            let dx = (basket.x + basket.width / 2) - (p.x + p.width / 2);
             p.x += dx * 0.1;
         }
 
@@ -125,13 +118,12 @@ function update() {
             ctx.drawImage(assets[p.type], p.x, p.y, p.width, p.height);
         }
 
-        // To'qnashuv
         if (p.y + p.height >= basket.y + 10 && p.y <= basket.y + 50 &&
             p.x + p.width >= basket.x && p.x <= basket.x + basket.width) {
 
             if (p.type === 'bomb') {
                 if (shieldActive) {
-                    shieldActive = false; // Qalqon yo'qoladi
+                    shieldActive = false;
                 } else {
                     lives--;
                     combo = 0;
@@ -162,7 +154,6 @@ function update() {
         }
     }
 
-    // 4. Oldingi holatni qaytarish
     ctx.restore();
 
     if (!isGameOver) {
@@ -172,7 +163,6 @@ function update() {
 }
 
 function drawUI() {
-    // UI fon
     ctx.fillStyle = "rgba(0, 0, 0, 0.6)";
     ctx.roundRect(15, 15, 250, 150, 15);
     ctx.fill();
@@ -185,7 +175,6 @@ function drawUI() {
     ctx.fillStyle = '#ff4d4d';
     ctx.fillText('❤️ Jon: ' + '❤️'.repeat(Math.max(0, lives)), 30, 105);
 
-    // Aktiv Power-uplar yozuvi
     ctx.font = 'bold 14px sans-serif';
     if (slowModeTimer > 0) { ctx.fillStyle = '#00f2ff'; ctx.fillText('❄️ MUZLATISH AKTIV', 30, 135); }
     else if (magnetTimer > 0) { ctx.fillStyle = '#FFD700'; ctx.fillText('🧲 MAGNIT AKTIV', 30, 135); }
@@ -208,50 +197,14 @@ function moveBasket(e) {
 canvas.addEventListener('touchmove', (e) => { e.preventDefault(); moveBasket(e); }, { passive: false });
 canvas.addEventListener('mousemove', moveBasket);
 
-function gameOver() {
-    if (isGameOver) return;
-    isGameOver = true;
-    clearInterval(spawnInterval);
-
-    // 1. LocalStorage dan random profilni olish (index.html da yaratilgan)
-    const localUserData = JSON.parse(localStorage.getItem('tomama_user_2026') || '{}');
-    const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
-    
-    // 2. Serverga yuboriladigan ma'lumotlar
-    const gameData = {
-        telegram_id: tgUser?.id || 0,
-        nickname: localUserData.nickname || "Noma'lum Pomidor",
-        avatar_url: localUserData.avatar || "assaets/avatars/1.png",
-        score: score
-    };
-
-    // 3. Serverga saqlash
-    fetch(`${SERVER_URL}/save`, { // SERVER_URL index.html da aniqlangan
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(gameData)
-    })
-    .then(res => res.json())
-    .then(data => {
-        console.log("Natija saqlandi!");
-    })
-    .catch(e => console.error("Saqlashda xato:", e));
-
-    // 4. Rekordlarni yangilash
-    totalDiamonds += currentDiamonds;
-    localStorage.setItem('totalDiamonds', totalDiamonds);
-    if (score > (localStorage.getItem('highScore') || 0)) {
-        localStorage.setItem('highScore', score);
-    }
-
-    // 5. Telegram tugmasini chiqarish
+function finishUI() {
     if (window.Telegram?.WebApp) {
         const tg = window.Telegram.WebApp;
         tg.MainButton.setText(`NATIJA: ${score} 🍅 | REYTINGGA QAYTISH`);
         tg.MainButton.show();
         tg.MainButton.onClick(() => {
             tg.MainButton.hide();
-            window.location.reload(); // Sahifani yangilab menyuga qaytadi
+            window.location.reload();
         });
     } else {
         alert(`O'yin tugadi! Ball: ${score}`);
@@ -259,6 +212,37 @@ function gameOver() {
     }
 }
 
+function gameOver() {
+    if (isGameOver) return;
+    isGameOver = true;
+    clearInterval(spawnInterval);
+
+    // identity register vaqtida localStorage ga yoziladi
+    const identity = localStorage.getItem("tomama_identity");
+
+    // identity bo'lmasa (register ishlamagan bo'lsa) - UI ni tugatamiz
+    if (!identity) {
+        console.warn("identity topilmadi, registratsiya ishlamagan bo'lishi mumkin.");
+        finishUI();
+        return;
+    }
+
+    fetch(`${SERVER_URL}/save`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ identity, score })
+    })
+    .then(res => res.json())
+    .then(data => console.log("Saqlash:", data))
+    .catch(e => console.error("Saqlashda xato:", e))
+    .finally(() => finishUI());
+
+    totalDiamonds += currentDiamonds;
+    localStorage.setItem('totalDiamonds', totalDiamonds);
+    if (score > (localStorage.getItem('highScore') || 0)) {
+        localStorage.setItem('highScore', score);
+    }
+}
 
 window.startGameLoop = function() {
     isGameOver = false; score = 0; lives = 3; currentDiamonds = 0; combo = 0;
