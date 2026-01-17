@@ -30,7 +30,7 @@ loadAsset('bomb', 'products/bomb.png');
 loadAsset('magnet', 'products/magnet.png');
 loadAsset('shield', 'products/shield.png');
 
-let basket = { x: canvas.width / 2 - 60, y: canvas.height - 160, width: 120, height: 85, originalWidth: 120 };
+let basket = { x: canvas.width / 2 - 60, y: canvas.height - 160, width: 120, height: 85 };
 let items = [];
 let score = 0, currentDiamonds = 0, lives = 3, combo = 0;
 let isGameOver = false;
@@ -56,7 +56,7 @@ function spawnItem() {
     y: -80,
     width: 65,
     height: 65,
-    type: type,
+    type,
     speedMod: 0.8 + Math.random() * 0.7,
     drift: (Math.random() - 0.5) * 2
   });
@@ -76,7 +76,6 @@ function update() {
 
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-
   ctx.translate(sx, sy);
 
   let currentGlobalSpeed = (gameSpeed + (score / 250)) * (slowModeTimer > 0 ? 0.5 : 1);
@@ -96,7 +95,7 @@ function update() {
       ctx.beginPath();
       ctx.strokeStyle = '#00f2ff';
       ctx.lineWidth = 4;
-      ctx.arc(basket.x + basket.width / 2, basket.y + basket.height / 2, 70, 0, Math.PI * 2);
+      ctx.arc(basket.x + basket.width/2, basket.y + basket.height/2, 70, 0, Math.PI * 2);
       ctx.stroke();
     }
   }
@@ -105,7 +104,7 @@ function update() {
     let p = items[i];
 
     if (magnetTimer > 0 && (p.type === 'tomato' || p.type === 'brand')) {
-      let dx = (basket.x + basket.width / 2) - (p.x + p.width / 2);
+      let dx = (basket.x + basket.width/2) - (p.x + p.width/2);
       p.x += dx * 0.1;
     }
 
@@ -118,8 +117,9 @@ function update() {
       ctx.drawImage(assets[p.type], p.x, p.y, p.width, p.height);
     }
 
+    // Collision
     if (p.y + p.height >= basket.y + 10 && p.y <= basket.y + 50 &&
-      p.x + p.width >= basket.x && p.x <= basket.x + basket.width) {
+        p.x + p.width >= basket.x && p.x <= basket.x + basket.width) {
 
       if (p.type === 'bomb') {
         if (shieldActive) {
@@ -170,8 +170,10 @@ function drawUI() {
   ctx.fillStyle = 'white';
   ctx.font = 'bold 20px sans-serif';
   ctx.fillText('🍅 Ball: ' + score, 30, 45);
+
   ctx.fillStyle = '#00f2ff';
   ctx.fillText('💎 Almaz: ' + currentDiamonds, 30, 75);
+
   ctx.fillStyle = '#ff4d4d';
   ctx.fillText('❤️ Jon: ' + '❤️'.repeat(Math.max(0, lives)), 30, 105);
 
@@ -197,10 +199,33 @@ function moveBasket(e) {
 canvas.addEventListener('touchmove', (e) => { e.preventDefault(); moveBasket(e); }, { passive: false });
 canvas.addEventListener('mousemove', moveBasket);
 
-function finishUI() {
+function gameOver() {
+  if (isGameOver) return;
+  isGameOver = true;
+  clearInterval(spawnInterval);
+
+  // Local rekordlar
+  totalDiamonds += currentDiamonds;
+  localStorage.setItem('totalDiamonds', totalDiamonds);
+  if (score > (localStorage.getItem('highScore') || 0)) {
+    localStorage.setItem('highScore', score);
+  }
+
+  // ✅ Backendga score yuborish: identity orqali
+  const identity = localStorage.getItem("tomama_identity");
+
+  if (identity && window.SERVER_URL) {
+    fetch(`${window.SERVER_URL}/save`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ identity, score })
+    }).catch(() => {});
+  }
+
+  // Telegram button
   if (window.Telegram?.WebApp) {
     const tg = window.Telegram.WebApp;
-    tg.MainButton.setText(`NATIJA: ${score} 🍅 | REYTINGGA QAYTISH`);
+    tg.MainButton.setText(`NATIJA: ${score} 🍅 | MENYUGA QAYTISH`);
     tg.MainButton.show();
     tg.MainButton.onClick(() => {
       tg.MainButton.hide();
@@ -212,40 +237,13 @@ function finishUI() {
   }
 }
 
-function gameOver() {
-  if (isGameOver) return;
-  isGameOver = true;
-  clearInterval(spawnInterval);
-
-  const identity = localStorage.getItem("tomama_identity");
-
-  // Agar register bo‘lmagan bo‘lsa ham UI tugasin
-  if (!identity) {
-    console.warn("identity yo'q. Registratsiya ishlamagan bo'lishi mumkin.");
-    finishUI();
-    return;
-  }
-
-  fetch(`${SERVER_URL}/save`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ identity, score })
-  })
-    .then(res => res.json())
-    .then(data => console.log("Saqlash:", data))
-    .catch(e => console.error("Saqlashda xato:", e))
-    .finally(() => finishUI());
-
-  totalDiamonds += currentDiamonds;
-  localStorage.setItem('totalDiamonds', totalDiamonds);
-  if (score > (localStorage.getItem('highScore') || 0)) {
-    localStorage.setItem('highScore', score);
-  }
-}
-
-window.startGameLoop = function () {
-  isGameOver = false; score = 0; lives = 3; currentDiamonds = 0; combo = 0;
+window.startGameLoop = function() {
+  isGameOver = false;
+  score = 0; lives = 3; currentDiamonds = 0; combo = 0;
   items = []; slowModeTimer = 0; magnetTimer = 0; shieldActive = false;
+
+  if (spawnInterval) clearInterval(spawnInterval);
   spawnInterval = setInterval(spawnItem, 600);
+
   requestAnimationFrame(update);
 };
