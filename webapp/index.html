@@ -131,7 +131,7 @@
     }
 
   async function autoRegister() {
-  //const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
+  const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
   const localUser = getOrGenerateUser();
 
   const avatarMatch = String(localUser.avatar || "").match(/avatars\/(\d+)\.png/i);
