@@ -130,50 +130,46 @@
     }
 
     async function autoRegister() {
-      const localUser = getOrGenerateUser();
-      const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
+  const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
+  const localUser = getOrGenerateUser();
 
-      const avatarMatch = String(localUser.avatar || "").match(/avatars\/(\d+)\.png/i);
-      const avatar_id = avatarMatch ? parseInt(avatarMatch[1], 10) : 1;
+  const avatarMatch = String(localUser.avatar || "").match(/avatars\/(\d+)\.png/i);
+  const avatar_id = avatarMatch ? parseInt(avatarMatch[1], 10) : 1;
 
-      let payload;
+  let payload;
 
-      if (tgUser?.id) {
-        payload = {
-          mode: "telegram",
-          telegram_id: tgUser.id,
-          username: tgUser.username ? `@${tgUser.username}` : (tgUser.first_name || localUser.nickname),
-          avatar_id
-        };
-        document.getElementById("myMode").innerText = "Telegram profil";
-      } else {
-        payload = {
-          mode: "guest",
-          guest_id: getOrCreateGuestId(),
-          username: localUser.nickname,
-          avatar_id
-        };
-        showGuestWarning();
-        document.getElementById("myMode").innerText = "Guest profil (Telegram tavsiya)";
-      }
+  if (tgUser?.id) {
+    payload = {
+      mode: "telegram",
+      telegram_id: tgUser.id,
+      username: tgUser.username ? `@${tgUser.username}` : (tgUser.first_name || localUser.nickname),
+      avatar_id
+    };
+  } else {
+    payload = {
+      mode: "guest",
+      guest_id: getOrCreateGuestId(),
+      username: localUser.nickname,
+      avatar_id
+    };
+    showGuestWarning();
+  }
 
-      try {
-        const res = await fetch(`${SERVER_URL}/register`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload)
-        });
-        const data = await res.json();
-        if (data?.ok) {
-          localStorage.setItem("tomama_identity", data.user.identity);
-          localStorage.setItem("tomama_is_guest", String(data.user.is_guest));
-        } else {
-          console.error("Register failed:", data);
-        }
-      } catch (e) {
-        console.error("Register fetch error:", e);
-      }
-    }
+  const res = await fetch(`${SERVER_URL}/register`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload)
+  });
+
+  const data = await res.json();
+
+  if (data?.ok) {
+    localStorage.setItem("tomama_identity", data.user.identity);
+    localStorage.setItem("tomama_is_guest", String(data.user.is_guest));
+  } else {
+    console.error("Register failed:", data);
+  }
+}
 
     function updateUIStats() {
       const user = getOrGenerateUser();
