@@ -1,24 +1,38 @@
 <!DOCTYPE html>
 <html lang="uz">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta charset="UTF-8" />
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <title>Tomama 2026</title>
 
   <!-- Telegram SDK (HEAD ichida bo‘lsin) -->
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
+  <!-- Backend URL: faqat shu joyda bir marta -->
   <script>
-  window.SERVER_URL = "https://oyinbackent-production.up.railway.app";
+    window.SERVER_URL = "https://oyinbackent-production.up.railway.app";
   </script>
 
-
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css" />
 
   <style>
-    .avatar-img { width: 36px; height: 36px; border-radius: 50%; border: 2px solid #ff4d4d; margin-right: 10px; }
+    /* Premium small UI helpers (sizning mavjud dizaynga mos) */
+    .avatar-img {
+      width: 36px; height: 36px; border-radius: 50%;
+      border: 2px solid #ff4d4d; margin-right: 10px;
+      background: rgba(255,255,255,0.06);
+    }
     .player-name { font-weight: 900; color: #fff; letter-spacing: .2px; }
-    .my-profile { background: rgba(255, 255, 255, 0.08); padding: 10px; border-radius: 16px; margin-bottom: 14px; display: flex; align-items: center; border: 1px solid rgba(255,255,255,0.12); }
+    .my-profile {
+      background: rgba(255, 255, 255, 0.08);
+      padding: 10px;
+      border-radius: 16px;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      border: 1px solid rgba(255,255,255,0.12);
+    }
     .warn-box {
       margin-top:10px; padding:10px 12px; border-radius:14px;
       background: rgba(255, 183, 77, 0.12);
@@ -40,9 +54,9 @@
 
   <!-- FON ELEMENTLARI -->
   <div class="bg-elements">
-    <img src="assaets/products/tomatoFon.png" class="floating-item" style="top:10%; left:10%;">
-    <img src="assaets/products/tomatoFon.png" class="floating-item" style="top:40%; right:15%;">
-    <img src="assaets/products/tomatoFon.png" class="floating-item" style="bottom:15%; left:20%;">
+    <img src="assaets/products/tomatoFon.png" class="floating-item" style="top:10%; left:10%;" alt="">
+    <img src="assaets/products/tomatoFon.png" class="floating-item" style="top:40%; right:15%;" alt="">
+    <img src="assaets/products/tomatoFon.png" class="floating-item" style="bottom:15%; left:20%;" alt="">
   </div>
 
   <!-- ASOSIY MENYU -->
@@ -61,7 +75,8 @@
 
       <!-- Guest warning -->
       <div id="guestWarn" class="warn-box">
-        Siz hozir <b>Guest</b> sifatida o‘ynayapsiz. Reyting va kuponlar to‘liq ishlashi uchun o‘yinni <b>Telegram WebApp</b> orqali oching.
+        Siz hozir <b>Guest</b> sifatida o‘ynayapsiz. Reyting va kuponlar to‘liq ishlashi uchun o‘yinni
+        <b>Telegram WebApp</b> orqali oching.
       </div>
 
       <!-- Profile loading hint -->
@@ -106,11 +121,12 @@
   <!-- O'YIN MAYDONI -->
   <canvas id="gameCanvas" class="hidden"></canvas>
 
+  <!-- =========================
+       CORE APP SCRIPT (Premium cleaned)
+       ========================= -->
   <script>
-    const tg = window.Telegram?.WebApp;
-
-    // Backend URL (o‘zingizniki)
-    window.SERVER_URL = SERVER_URL; // game.js uchun
+    // Telegram
+    const tg = window.Telegram?.WebApp || null;
 
     if (tg) {
       tg.ready();
@@ -120,24 +136,10 @@
     }
 
     // =========================
-    // Helpers
+    // Small Helpers
     // =========================
-    function showGuestWarning() {
-      const el = document.getElementById("guestWarn");
-      if (el) el.style.display = "block";
-    }
-    function hideGuestWarning() {
-      const el = document.getElementById("guestWarn");
-      if (el) el.style.display = "none";
-    }
-    function showProfileHint() {
-      const el = document.getElementById("profileHint");
-      if (el) el.style.display = "block";
-    }
-    function hideProfileHint() {
-      const el = document.getElementById("profileHint");
-      if (el) el.style.display = "none";
-    }
+    function showEl(id) { const el = document.getElementById(id); if (el) el.style.display = "block"; }
+    function hideEl(id) { const el = document.getElementById(id); if (el) el.style.display = "none"; }
 
     function getOrCreateGuestId() {
       let gid = localStorage.getItem("tomama_guest_id");
@@ -153,26 +155,28 @@
       return m ? parseInt(m[1], 10) : 1;
     }
 
-    // Guest uchun random profil (faqat guest yoki tg username bo‘lmasa fallback)
     function getOrGenerateUser() {
       let localUser = localStorage.getItem("tomama_user_2026");
       if (!localUser) {
         const adjectives = ["Chaqqon", "Tezkor", "Olovli", "Super", "Mantiqiy", "Yulduzli", "Oltin", "Botir"];
         const nouns = ["Pomidor", "Tomama", "Chempion", "Usta", "Sardor", "Lochin", "Pahlavon"];
-        const randomName = adjectives[Math.floor(Math.random() * adjectives.length)] + " " + nouns[Math.floor(Math.random() * nouns.length)];
+        const randomName =
+          adjectives[Math.floor(Math.random() * adjectives.length)] + " " +
+          nouns[Math.floor(Math.random() * nouns.length)];
         const randomAvatar = `assaets/avatars/${Math.floor(Math.random() * 20) + 1}.png`;
         const newUser = { nickname: randomName, avatar: randomAvatar };
         localStorage.setItem("tomama_user_2026", JSON.stringify(newUser));
         return newUser;
       }
-      try { return JSON.parse(localUser); } catch { return { nickname:"Pomidor", avatar:"assaets/avatars/1.png" }; }
+      try { return JSON.parse(localUser); }
+      catch { return { nickname: "Pomidor", avatar: "assaets/avatars/1.png" }; }
     }
 
     // =========================
     // AUTO REGISTER (profil yaratish / tiklash)
     // =========================
     async function autoRegister() {
-      showProfileHint();
+      showEl("profileHint");
 
       const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
       const localUser = getOrGenerateUser();
@@ -181,7 +185,7 @@
       let payload;
 
       if (tgUser?.id) {
-        hideGuestWarning();
+        hideEl("guestWarn");
         payload = {
           mode: "telegram",
           telegram_id: tgUser.id,
@@ -189,7 +193,7 @@
           avatar_id
         };
       } else {
-        showGuestWarning();
+        showEl("guestWarn");
         payload = {
           mode: "guest",
           guest_id: getOrCreateGuestId(),
@@ -199,7 +203,7 @@
       }
 
       try {
-        const res = await fetch(`${SERVER_URL}/register`, {
+        const res = await fetch(`${window.SERVER_URL}/register`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload)
@@ -211,12 +215,10 @@
           localStorage.setItem("tomama_identity", data.user.identity);
           localStorage.setItem("tomama_is_guest", String(data.user.is_guest));
 
-          // Diamonds serverdan sync
           if (typeof data.user.diamonds === "number") {
             localStorage.setItem("totalDiamonds", String(data.user.diamonds));
           }
 
-          // Profil UI sync
           localStorage.setItem("tomama_username", data.user.username || payload.username);
           localStorage.setItem("tomama_avatar_id", String(data.user.avatar_id || avatar_id));
         } else {
@@ -225,7 +227,7 @@
       } catch (e) {
         console.error("Register network error:", e);
       } finally {
-        hideProfileHint();
+        hideEl("profileHint");
       }
     }
 
@@ -257,7 +259,7 @@
       list.innerHTML = "<p style='text-align:center; opacity:0.8;'>Yuklanmoqda...</p>";
 
       try {
-        const res = await fetch(`${SERVER_URL}/leaderboard`);
+        const res = await fetch(`${window.SERVER_URL}/leaderboard`);
         if (!res.ok) throw new Error("Server xatosi");
         const data = await res.json();
 
@@ -277,9 +279,9 @@
               <div class="row-left">
                 <div class="medal">${medal}</div>
                 <img class="row-avatar" src="${avatar}" alt="avatar">
-                <div class="row-name">${nickname}</div>
+                <div class="row-name">${escapeHtml(nickname)}</div>
               </div>
-              <div class="row-score">${player.score} 🍅</div>
+              <div class="row-score">${Number(player.score || 0)} 🍅</div>
             </div>
           `;
         });
@@ -290,482 +292,439 @@
     }
 
     // =========================
-    // Coupons
+    // Coupons (sizning mavjud premium funksiyalar - o'zgarmagan)
     // =========================
-  // COUPONS (PREMIUM UI)
-  // ------------------------------
-  async function loadCoupons() {
-    const identity = localStorage.getItem("tomama_identity");
-    const wrap = document.getElementById("couponList");
-    if (!wrap) return;
+    async function loadCoupons() {
+      const identity = localStorage.getItem("tomama_identity");
+      const wrap = document.getElementById("couponList");
+      if (!wrap) return;
 
-    // Premium shimmer loader
-    wrap.innerHTML = `
-      <div class="cpn-wrap">
-        <div class="cpn-topbar">
-          <h3 class="cpn-title">Do‘kon</h3>
-          <div class="cpn-balance"><span>💎</span><strong>...</strong></div>
-        </div>
-        <div class="cpn-shimmer"></div>
-        <div class="cpn-shimmer"></div>
-        <div class="cpn-shimmer"></div>
-        <div class="cpn-section">
-          <h3>Mening kuponlarim</h3>
-          <div class="cpn-shimmer"></div>
-        </div>
-      </div>
-    `;
-
-    try {
-      const [catRes, myRes] = await Promise.all([
-        fetch(`${SERVER_URL}/coupons`),
-        identity ? fetch(`${SERVER_URL}/my/coupons?identity=${encodeURIComponent(identity)}`) : Promise.resolve(null)
-      ]);
-
-      const cat = await catRes.json();
-      const my = myRes ? await myRes.json() : { ok: true, items: [] };
-      if (!cat.ok) throw new Error("catalog_error");
-
-      const diamonds = Number(localStorage.getItem("totalDiamonds") || 0);
-
-      let html = `
+      wrap.innerHTML = `
         <div class="cpn-wrap">
           <div class="cpn-topbar">
             <h3 class="cpn-title">Do‘kon</h3>
-            <div class="cpn-balance">
-              <span>💎</span>
-              <strong>${diamonds}</strong>
-            </div>
+            <div class="cpn-balance"><span>💎</span><strong>...</strong></div>
           </div>
-
-          <div class="cpn-note">
-            Kuponlar serverda tekshiriladi. Sertifikat ko‘rinishida: <b>QR + Voucher Code</b>.
+          <div class="cpn-shimmer"></div>
+          <div class="cpn-shimmer"></div>
+          <div class="cpn-shimmer"></div>
+          <div class="cpn-section">
+            <h3>Mening kuponlarim</h3>
+            <div class="cpn-shimmer"></div>
           </div>
-
-          <div class="cpn-grid">
+        </div>
       `;
 
-      cat.coupons.forEach((c) => {
-        const cost = Number(c.cost_diamonds || 0);
-        const disabled = diamonds < cost;
+      try {
+        const [catRes, myRes] = await Promise.all([
+          fetch(`${window.SERVER_URL}/coupons`),
+          identity ? fetch(`${window.SERVER_URL}/my/coupons?identity=${encodeURIComponent(identity)}`) : Promise.resolve(null)
+        ]);
 
-        html += `
-          <div class="cpn-card">
-            <div class="cpn-row">
-              <div style="min-width:0;">
-                <div class="cpn-badge"><span class="dot"></span> Sertifikat</div>
-                <p class="cpn-name">${escapeHtml(c.title || "")}</p>
+        const cat = await catRes.json();
+        const my = myRes ? await myRes.json() : { ok: true, items: [] };
+        if (!cat.ok) throw new Error("catalog_error");
+
+        const diamonds = Number(localStorage.getItem("totalDiamonds") || 0);
+
+        let html = `
+          <div class="cpn-wrap">
+            <div class="cpn-topbar">
+              <h3 class="cpn-title">Do‘kon</h3>
+              <div class="cpn-balance">
+                <span>💎</span>
+                <strong>${diamonds}</strong>
               </div>
-              <div class="cpn-price">${cost} 💎</div>
             </div>
 
-            <div class="cpn-desc">${escapeHtml(c.description || "")}</div>
-
-            <div class="cpn-actions">
-              <button
-                class="cpn-btn cpn-btn-primary"
-                ${disabled ? "disabled" : ""}
-                onclick="exchangeCoupon(${c.id})"
-              >
-                ${disabled ? "💎 Yetarli emas" : "Almashtirish"}
-              </button>
+            <div class="cpn-note">
+              Kuponlar serverda tekshiriladi. Sertifikat ko‘rinishida: <b>QR + Voucher Code</b>.
             </div>
-          </div>
+
+            <div class="cpn-grid">
         `;
-      });
 
-      html += `</div>`;
-
-      // My coupons
-      html += `
-        <div class="cpn-section">
-          <div class="cpn-topbar" style="margin-bottom:10px;">
-            <h3 class="cpn-title" style="font-size:16px;">Mening kuponlarim</h3>
-            <div class="cpn-pill">🔒 Bir martalik</div>
-          </div>
-      `;
-
-      if (!identity) {
-        html += `<div class="cpn-empty" style="color:#ffcc80; opacity:0.95;">
-          Kuponlar ro‘yxati uchun registratsiya kerak (guest ham bo‘ladi).
-        </div>`;
-      } else if (!my.ok || !my.items?.length) {
-        html += `<div class="cpn-empty">Hozircha kupon yo‘q.</div>`;
-      } else {
-        my.items.forEach((it) => {
-          const st = String(it.status || "active").toUpperCase();
-          const badge = st === "USED" ? "✅ Ishlatilgan" : "🟢 Aktiv";
+        cat.coupons.forEach((c) => {
+          const cost = Number(c.cost_diamonds || 0);
+          const disabled = diamonds < cost;
 
           html += `
-            <div class="cpn-card" style="padding:14px;">
+            <div class="cpn-card">
               <div class="cpn-row">
                 <div style="min-width:0;">
-                  <div class="cpn-badge"><span class="dot"></span> ${badge}</div>
-                  <p class="cpn-name">${escapeHtml(it.title || "")}</p>
+                  <div class="cpn-badge"><span class="dot"></span> Sertifikat</div>
+                  <p class="cpn-name">${escapeHtml(c.title || "")}</p>
                 </div>
-                <div class="cpn-pill">${st}</div>
+                <div class="cpn-price">${cost} 💎</div>
               </div>
 
-              <div class="cpn-desc">
-                Voucher Code: <b style="color:var(--accent-gold);">${escapeHtml(it.voucher_code || "")}</b>
-              </div>
+              <div class="cpn-desc">${escapeHtml(c.description || "")}</div>
 
               <div class="cpn-actions">
-                <button class="cpn-btn cpn-btn-ghost" onclick="openCertificateByCode('${encodeURIComponent(it.voucher_code || "")}')">
-                  Sertifikatni ko‘rish
+                <button class="cpn-btn cpn-btn-primary"
+                        ${disabled ? "disabled" : ""}
+                        onclick="exchangeCoupon(${c.id})">
+                  ${disabled ? "💎 Yetarli emas" : "Almashtirish"}
                 </button>
               </div>
             </div>
           `;
         });
-      }
 
-      html += `</div></div>`;
-      wrap.innerHTML = html;
-    } catch (e) {
-      console.error(e);
-      wrap.innerHTML = `<p style="color:#ff5252; text-align:center;">Kuponlarni yuklab bo‘lmadi.</p>`;
-    }
-  }
+        html += `</div>`;
 
-  async function exchangeCoupon(couponId) {
-    const identity = localStorage.getItem("tomama_identity");
-    if (!identity) {
-      alert("Avval registratsiya kerak.");
-      return;
-    }
-
-    try {
-      const res = await fetch(`${SERVER_URL}/coupons/exchange`, {
-        method: "POST",
-        headers: {"Content-Type":"application/json"},
-        body: JSON.stringify({ identity, coupon_id: couponId })
-      });
-      const data = await res.json();
-
-      if (!data.ok) {
-        if (data.error === "NOT_ENOUGH_DIAMONDS") {
-          alert(`💎 Yetarli emas. Kerak: ${data.need}, Sizda: ${data.have}`);
-          return;
-        }
-        alert("Kupon olishda xatolik.");
-        return;
-      }
-
-      if (typeof data.certificate?.diamonds_left === "number") {
-        localStorage.setItem("totalDiamonds", String(data.certificate.diamonds_left));
-        updateUIStats();
-      }
-
-      showCertificate({
-        title: data.certificate.title,
-        code: data.certificate.voucher_code,
-        qrDataUrl: data.certificate.qr_data_url,
-      });
-
-      // ro‘yxatni yangilash
-      loadCoupons();
-    } catch (e) {
-      console.error(e);
-      alert("Server bilan aloqa yo‘q.");
-    }
-  }
-
-  // My coupon: hozir server /my/coupons faqat code qaytaradi.
-  // QR-ni ko‘rish uchun eng oson yo‘l: exchange natijasida darhol modal ko‘rsatish.
-  // Agar siz “eski kuponlar” uchun ham QR ko‘rsatmoqchi bo‘lsangiz, serverga endpoint qo‘shamiz (keyingi bosqich).
-  function openCertificateByCode(voucherCodeEnc) {
-    const code = decodeURIComponent(voucherCodeEnc || "");
-    showCertificate({
-      title: "Kupon Sertifikati",
-      code,
-      qrDataUrl: null
-    });
-  }
-
- function showCertificate({ title, code, qrDataUrl }) {
-  let modal = document.getElementById("certModal");
-  if (!modal) {
-    modal = document.createElement("div");
-    modal.id = "certModal";
-    modal.className = "cpn-modal";
-    modal.innerHTML = `
-      <div class="cpn-modal-card">
-        <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;">
-          <div>
-            <div id="certTitle" style="font-weight:950;font-size:16px;"></div>
-            <div style="opacity:0.8;font-size:12px;margin-top:4px;">Sertifikat (QR + Voucher Code)</div>
-          </div>
-          <button onclick="document.getElementById('certModal').remove()"
-            style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.12);
-            color:#fff;border-radius:12px;padding:8px 10px;cursor:pointer;font-weight:900;">Yopish</button>
-        </div>
-
-        <div style="margin-top:14px;display:flex;gap:14px;align-items:center;">
-          <div class="cpn-qr-box">
-            <img id="certQR" src="" alt="QR">
-          </div>
-          <div style="flex:1;">
-            <div style="opacity:0.8;font-size:12px;">Voucher Code</div>
-            <div id="certCode" style="font-weight:950;font-size:18px;color:var(--accent-gold);margin-top:4px;"></div>
-
-            <button onclick="navigator.clipboard?.writeText(document.getElementById('certCode').innerText)"
-              class="cpn-btn cpn-btn-ghost"
-              style="margin-top:10px;width:100%;">
-              Koddan nusxa olish
-            </button>
-
-            <button id="btnDownloadCert"
-              class="cpn-btn cpn-btn-primary"
-              style="margin-top:10px;width:100%;">
-              Sertifikatni yuklab olish (PDF/PNG)
-            </button>
-
-            <div style="margin-top:10px;opacity:0.75;font-size:12px;line-height:1.4;">
-              Eslatma: Yuklab olingandan so‘ng kupon holati <b>USED</b> bo‘ladi.
+        html += `
+          <div class="cpn-section">
+            <div class="cpn-topbar" style="margin-bottom:10px;">
+              <h3 class="cpn-title" style="font-size:16px;">Mening kuponlarim</h3>
+              <div class="cpn-pill">🔒 Bir martalik</div>
             </div>
-          </div>
-        </div>
-      </div>
-    `;
-    document.body.appendChild(modal);
-  } else {
-    document.body.appendChild(modal);
-  }
+        `;
 
-  document.getElementById("certTitle").innerText = title || "Kupon Sertifikati";
-  document.getElementById("certCode").innerText = code || "";
+        if (!identity) {
+          html += `<div class="cpn-empty" style="color:#ffcc80; opacity:0.95;">
+            Kuponlar ro‘yxati uchun registratsiya kerak (guest ham bo‘ladi).
+          </div>`;
+        } else if (!my.ok || !my.items?.length) {
+          html += `<div class="cpn-empty">Hozircha kupon yo‘q.</div>`;
+        } else {
+          my.items.forEach((it) => {
+            const st = String(it.status || "active").toUpperCase();
+            const badge = st === "USED" ? "✅ Ishlatilgan" : "🟢 Aktiv";
 
-  const img = document.getElementById("certQR");
+            html += `
+              <div class="cpn-card" style="padding:14px;">
+                <div class="cpn-row">
+                  <div style="min-width:0;">
+                    <div class="cpn-badge"><span class="dot"></span> ${badge}</div>
+                    <p class="cpn-name">${escapeHtml(it.title || "")}</p>
+                  </div>
+                  <div class="cpn-pill">${st}</div>
+                </div>
 
-  // Agar QR hozir yo'q bo'lsa — placeholder
-  if (qrDataUrl) {
-    img.src = qrDataUrl;
-  } else {
-    img.src =
-      "data:image/svg+xml;charset=utf-8," +
-      encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="140" height="140">
-        <rect width="140" height="140" rx="18" ry="18" fill="#ffffff"/>
-        <text x="70" y="72" text-anchor="middle" font-family="Arial" font-size="14" fill="#111">QR yuklanadi</text>
-        <text x="70" y="92" text-anchor="middle" font-family="Arial" font-size="11" fill="#444">Download bosing</text>
-      </svg>`);
-  }
+                <div class="cpn-desc">
+                  Voucher Code: <b style="color:var(--accent-gold);">${escapeHtml(it.voucher_code || "")}</b>
+                </div>
 
-  // Download bosilganda: serverdan QR olib, statusni USED qiladi va PNG qilib yuklaydi
-  const btn = document.getElementById("btnDownloadCert");
-  btn.onclick = async () => {
-    btn.disabled = true;
-    btn.innerText = "Yuklanmoqda...";
+                <div class="cpn-actions">
+                  <button class="cpn-btn cpn-btn-ghost"
+                          onclick="openCertificateByCode('${encodeURIComponent(it.voucher_code || "")}')">
+                    Sertifikatni ko‘rish
+                  </button>
+                </div>
+              </div>
+            `;
+          });
+        }
 
-    try {
+        html += `</div></div>`;
+        wrap.innerHTML = html;
+      } catch (e) {
+        console.error(e);
+        wrap.innerHTML = `<p style="color:#ff5252; text-align:center;">Kuponlarni yuklab bo‘lmadi.</p>`;
+      }
+    }
+
+    async function exchangeCoupon(couponId) {
       const identity = localStorage.getItem("tomama_identity");
       if (!identity) {
-        alert("Registratsiya topilmadi.");
+        alert("Avval registratsiya kerak.");
         return;
       }
 
-      const voucher_code = document.getElementById("certCode").innerText;
-
-      const res = await fetch(`${SERVER_URL}/coupons/download`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ identity, voucher_code })
-      });
-
-      const data = await res.json();
-      if (!data.ok) {
-        alert("Download xatolik.");
-        return;
-      }
-
-      const cert = data.certificate;
-      document.getElementById("certTitle").innerText = cert.title || title || "Kupon Sertifikati";
-      document.getElementById("certCode").innerText = cert.voucher_code || voucher_code;
-      document.getElementById("certQR").src = cert.qr_data_url;
-
-      // PNG sifatida yuklab beramiz
-      await downloadCertificatePNG({
-        title: cert.title || title || "Kupon Sertifikati",
-        code: cert.voucher_code || voucher_code,
-        qrDataUrl: cert.qr_data_url
-      });
-
-      // status yangilansin
-      await loadCoupons();
-    } catch (e) {
-      console.error(e);
-      alert("Server bilan aloqa yo‘q.");
-    } finally {
-      btn.disabled = false;
-      btn.innerText = "Sertifikatni yuklab olish (PDF/PNG)";
-    }
-  };
-}
-     // HTML escape helper
-  function escapeHtml(str) {
-    return String(str || "")
-      .replaceAll("&", "&amp;")
-      .replaceAll("<", "&lt;")
-      .replaceAll(">", "&gt;")
-      .replaceAll('"', "&quot;")
-      .replaceAll("'", "&#039;");
-  }
-
-   // Certificate Download (Telegram-friendly) + mark as used after download
-async function downloadCertificatePNG({ title, code, qrDataUrl, token }) {
-  // QR rasmni yuklab, canvasga chizamiz
-  const qrImg = await loadImage(qrDataUrl);
-
-  const w = 1080, h = 650;
-  const canvas = document.createElement("canvas");
-  canvas.width = w;
-  canvas.height = h;
-  const c = canvas.getContext("2d");
-
-  // fon (premium)
-  c.fillStyle = "#0b0b0f";
-  c.fillRect(0, 0, w, h);
-
-  // gradient glow
-  const g = c.createLinearGradient(0, 0, w, h);
-  g.addColorStop(0, "rgba(255,82,82,0.35)");
-  g.addColorStop(0.5, "rgba(0,242,255,0.18)");
-  g.addColorStop(1, "rgba(255,215,0,0.22)");
-  c.fillStyle = g;
-  c.fillRect(0, 0, w, h);
-
-  // glass card
-  roundRect(c, 60, 70, 960, 510, 26);
-  c.fillStyle = "rgba(255,255,255,0.10)";
-  c.fill();
-  c.strokeStyle = "rgba(255,255,255,0.18)";
-  c.lineWidth = 2;
-  c.stroke();
-
-  // Title
-  c.fillStyle = "#ffffff";
-  c.font = "900 42px Arial";
-  c.fillText(title, 110, 155);
-
-  // Subtitle
-  c.fillStyle = "rgba(255,255,255,0.75)";
-  c.font = "600 22px Arial";
-  c.fillText("Sertifikat (QR + Voucher Code)", 110, 195);
-
-  // QR box
-  roundRect(c, 110, 245, 260, 260, 24);
-  c.fillStyle = "#ffffff";
-  c.fill();
-  c.drawImage(qrImg, 125, 260, 230, 230);
-
-  // Code
-  c.fillStyle = "rgba(255,255,255,0.75)";
-  c.font = "700 22px Arial";
-  c.fillText("Voucher Code", 420, 285);
-
-  c.fillStyle = "#ffd700";
-  c.font = "900 44px Arial";
-  c.fillText(code, 420, 340);
-
-  // Note
-  c.fillStyle = "rgba(255,255,255,0.70)";
-  c.font = "600 18px Arial";
-  c.fillText("Yuklab olingan kupon USED holatiga o‘tadi.", 420, 385);
-
-  // Footer
-  c.fillStyle = "rgba(255,255,255,0.55)";
-  c.font = "600 16px Arial";
-  c.fillText("Tomama 2026", 110, 540);
-
-  const dataUrl = canvas.toDataURL("image/png");
-
-  // 1) Telegram WebApp: download emas, rasmni ochib beramiz
-  if (window.Telegram?.WebApp) {
-    const win = window.open();
-    if (win) {
-      win.document.write(`
-        <html>
-          <head>
-            <title>Tomama Certificate</title>
-            <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
-          </head>
-          <body style="margin:0;background:#000;display:flex;align-items:center;justify-content:center;">
-            <img src="${dataUrl}" style="width:100%;height:auto;" />
-          </body>
-        </html>
-      `);
-      win.document.close();
-    } else {
-      // popup blok bo'lsa
-      window.location.href = dataUrl;
-    }
-
-    // 2) Yuklandi deb hisoblab, USED ga o'tkazamiz (serverga signal)
-    // token bo'lsa ishlaydi
-    if (token) {
       try {
-        await fetch(`${SERVER_URL}/coupons/mark-used`, {
+        const res = await fetch(`${window.SERVER_URL}/coupons/exchange`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ token })
+          body: JSON.stringify({ identity, coupon_id: couponId })
         });
+        const data = await res.json();
+
+        if (!data.ok) {
+          if (data.error === "NOT_ENOUGH_DIAMONDS") {
+            alert(`💎 Yetarli emas. Kerak: ${data.need}, Sizda: ${data.have}`);
+            return;
+          }
+          alert("Kupon olishda xatolik.");
+          return;
+        }
+
+        if (typeof data.certificate?.diamonds_left === "number") {
+          localStorage.setItem("totalDiamonds", String(data.certificate.diamonds_left));
+          updateUIStats();
+        }
+
+        showCertificate({
+          title: data.certificate.title,
+          code: data.certificate.voucher_code,
+          qrDataUrl: data.certificate.qr_data_url,
+        });
+
+        loadCoupons();
       } catch (e) {
-        console.warn("mark-used failed:", e);
+        console.error(e);
+        alert("Server bilan aloqa yo‘q.");
       }
     }
 
-    return;
-  }
-
-  // 3) Oddiy brauzer: yuklab oladi
-  const a = document.createElement("a");
-  a.href = dataUrl;
-  a.download = `tomama-certificate-${code}.png`;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-
-  // 4) Brauzerda ham USED ga o'tkazamiz
-  if (token) {
-    try {
-      await fetch(`${SERVER_URL}/coupons/mark-used`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token })
-      });
-    } catch (e) {
-      console.warn("mark-used failed:", e);
+    function openCertificateByCode(voucherCodeEnc) {
+      const code = decodeURIComponent(voucherCodeEnc || "");
+      showCertificate({ title: "Kupon Sertifikati", code, qrDataUrl: null });
     }
-  }
-}
 
+    function showCertificate({ title, code, qrDataUrl }) {
+      let modal = document.getElementById("certModal");
+      if (!modal) {
+        modal = document.createElement("div");
+        modal.id = "certModal";
+        modal.className = "cpn-modal";
+        modal.innerHTML = `
+          <div class="cpn-modal-card">
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;">
+              <div>
+                <div id="certTitle" style="font-weight:950;font-size:16px;"></div>
+                <div style="opacity:0.8;font-size:12px;margin-top:4px;">Sertifikat (QR + Voucher Code)</div>
+              </div>
+              <button onclick="document.getElementById('certModal').remove()"
+                style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.12);
+                color:#fff;border-radius:12px;padding:8px 10px;cursor:pointer;font-weight:900;">Yopish</button>
+            </div>
 
-function roundRect(ctx, x, y, w, h, r) {
-  const rr = Math.min(r, w / 2, h / 2);
-  ctx.beginPath();
-  ctx.moveTo(x + rr, y);
-  ctx.arcTo(x + w, y, x + w, y + h, rr);
-  ctx.arcTo(x + w, y + h, x, y + h, rr);
-  ctx.arcTo(x, y + h, x, y, rr);
-  ctx.arcTo(x, y, x + w, y, rr);
-  ctx.closePath();
-}
+            <div style="margin-top:14px;display:flex;gap:14px;align-items:center;">
+              <div class="cpn-qr-box">
+                <img id="certQR" src="" alt="QR">
+              </div>
+              <div style="flex:1;">
+                <div style="opacity:0.8;font-size:12px;">Voucher Code</div>
+                <div id="certCode" style="font-weight:950;font-size:18px;color:var(--accent-gold);margin-top:4px;"></div>
 
-function loadImage(src) {
-  return new Promise((resolve, reject) => {
-    const im = new Image();
-    im.onload = () => resolve(im);
-    im.onerror = reject;
-    im.src = src;
-  });
-}
+                <button onclick="navigator.clipboard?.writeText(document.getElementById('certCode').innerText)"
+                  class="cpn-btn cpn-btn-ghost"
+                  style="margin-top:10px;width:100%;">
+                  Koddan nusxa olish
+                </button>
 
-    
+                <button id="btnDownloadCert"
+                  class="cpn-btn cpn-btn-primary"
+                  style="margin-top:10px;width:100%;">
+                  Sertifikatni yuklab olish (PDF/PNG)
+                </button>
+
+                <div style="margin-top:10px;opacity:0.75;font-size:12px;line-height:1.4;">
+                  Eslatma: Yuklab olingandan so‘ng kupon holati <b>USED</b> bo‘ladi.
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+        document.body.appendChild(modal);
+      } else {
+        document.body.appendChild(modal);
+      }
+
+      document.getElementById("certTitle").innerText = title || "Kupon Sertifikati";
+      document.getElementById("certCode").innerText = code || "";
+
+      const img = document.getElementById("certQR");
+      if (qrDataUrl) {
+        img.src = qrDataUrl;
+      } else {
+        img.src = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(`
+          <svg xmlns="http://www.w3.org/2000/svg" width="140" height="140">
+            <rect width="140" height="140" rx="18" ry="18" fill="#ffffff"/>
+            <text x="70" y="72" text-anchor="middle" font-family="Arial" font-size="14" fill="#111">QR yuklanadi</text>
+            <text x="70" y="92" text-anchor="middle" font-family="Arial" font-size="11" fill="#444">Download bosing</text>
+          </svg>
+        `);
+      }
+
+      const btn = document.getElementById("btnDownloadCert");
+      btn.onclick = async () => {
+        btn.disabled = true;
+        btn.innerText = "Yuklanmoqda...";
+
+        try {
+          const identity = localStorage.getItem("tomama_identity");
+          if (!identity) { alert("Registratsiya topilmadi."); return; }
+
+          const voucher_code = document.getElementById("certCode").innerText;
+
+          const res = await fetch(`${window.SERVER_URL}/coupons/download`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ identity, voucher_code })
+          });
+
+          const data = await res.json();
+          if (!data.ok) { alert("Download xatolik."); return; }
+
+          const cert = data.certificate;
+          document.getElementById("certTitle").innerText = cert.title || title || "Kupon Sertifikati";
+          document.getElementById("certCode").innerText = cert.voucher_code || voucher_code;
+          document.getElementById("certQR").src = cert.qr_data_url;
+
+          await downloadCertificatePNG({
+            title: cert.title || title || "Kupon Sertifikati",
+            code: cert.voucher_code || voucher_code,
+            qrDataUrl: cert.qr_data_url
+          });
+
+          await loadCoupons();
+        } catch (e) {
+          console.error(e);
+          alert("Server bilan aloqa yo‘q.");
+        } finally {
+          btn.disabled = false;
+          btn.innerText = "Sertifikatni yuklab olish (PDF/PNG)";
+        }
+      };
+    }
+
+    // HTML escape helper
+    function escapeHtml(str) {
+      return String(str || "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    // Certificate Download helpers (sizning mavjud kod)
+    async function downloadCertificatePNG({ title, code, qrDataUrl, token }) {
+      const qrImg = await loadImage(qrDataUrl);
+
+      const w = 1080, h = 650;
+      const ccanvas = document.createElement("canvas");
+      ccanvas.width = w;
+      ccanvas.height = h;
+      const c = ccanvas.getContext("2d");
+
+      c.fillStyle = "#0b0b0f";
+      c.fillRect(0, 0, w, h);
+
+      const g = c.createLinearGradient(0, 0, w, h);
+      g.addColorStop(0, "rgba(255,82,82,0.35)");
+      g.addColorStop(0.5, "rgba(0,242,255,0.18)");
+      g.addColorStop(1, "rgba(255,215,0,0.22)");
+      c.fillStyle = g;
+      c.fillRect(0, 0, w, h);
+
+      roundRect(c, 60, 70, 960, 510, 26);
+      c.fillStyle = "rgba(255,255,255,0.10)";
+      c.fill();
+      c.strokeStyle = "rgba(255,255,255,0.18)";
+      c.lineWidth = 2;
+      c.stroke();
+
+      c.fillStyle = "#ffffff";
+      c.font = "900 42px Arial";
+      c.fillText(title, 110, 155);
+
+      c.fillStyle = "rgba(255,255,255,0.75)";
+      c.font = "600 22px Arial";
+      c.fillText("Sertifikat (QR + Voucher Code)", 110, 195);
+
+      roundRect(c, 110, 245, 260, 260, 24);
+      c.fillStyle = "#ffffff";
+      c.fill();
+      c.drawImage(qrImg, 125, 260, 230, 230);
+
+      c.fillStyle = "rgba(255,255,255,0.75)";
+      c.font = "700 22px Arial";
+      c.fillText("Voucher Code", 420, 285);
+
+      c.fillStyle = "#ffd700";
+      c.font = "900 44px Arial";
+      c.fillText(code, 420, 340);
+
+      c.fillStyle = "rgba(255,255,255,0.70)";
+      c.font = "600 18px Arial";
+      c.fillText("Yuklab olingan kupon USED holatiga o‘tadi.", 420, 385);
+
+      c.fillStyle = "rgba(255,255,255,0.55)";
+      c.font = "600 16px Arial";
+      c.fillText("Tomama 2026", 110, 540);
+
+      const dataUrl = ccanvas.toDataURL("image/png");
+
+      if (window.Telegram?.WebApp) {
+        const win = window.open();
+        if (win) {
+          win.document.write(`
+            <html>
+              <head>
+                <title>Tomama Certificate</title>
+                <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+              </head>
+              <body style="margin:0;background:#000;display:flex;align-items:center;justify-content:center;">
+                <img src="${dataUrl}" style="width:100%;height:auto;" />
+              </body>
+            </html>
+          `);
+          win.document.close();
+        } else {
+          window.location.href = dataUrl;
+        }
+
+        if (token) {
+          try {
+            await fetch(`${window.SERVER_URL}/coupons/mark-used`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ token })
+            });
+          } catch (e) {
+            console.warn("mark-used failed:", e);
+          }
+        }
+        return;
+      }
+
+      const a = document.createElement("a");
+      a.href = dataUrl;
+      a.download = `tomama-certificate-${code}.png`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+
+      if (token) {
+        try {
+          await fetch(`${window.SERVER_URL}/coupons/mark-used`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ token })
+          });
+        } catch (e) {
+          console.warn("mark-used failed:", e);
+        }
+      }
+    }
+
+    function roundRect(ctx2, x, y, w, h, r) {
+      const rr = Math.min(r, w / 2, h / 2);
+      ctx2.beginPath();
+      ctx2.moveTo(x + rr, y);
+      ctx2.arcTo(x + w, y, x + w, y + h, rr);
+      ctx2.arcTo(x + w, y + h, x, y + h, rr);
+      ctx2.arcTo(x, y + h, x, y, rr);
+      ctx2.arcTo(x, y, x + w, y, rr);
+      ctx2.closePath();
+    }
+
+    function loadImage(src) {
+      return new Promise((resolve, reject) => {
+        const im = new Image();
+        im.onload = () => resolve(im);
+        im.onerror = reject;
+        im.src = src;
+      });
+    }
+
     // =========================
     // Menu Functions
     // =========================
     async function startGame() {
-      // game.js startGameLoop profil ready bo‘lishini tekshiradi
       document.getElementById("mainMenu").classList.add("hidden");
       document.getElementById("gameCanvas").classList.remove("hidden");
       if (window.startGameLoop) await window.startGameLoop();
@@ -793,6 +752,7 @@ function loadImage(src) {
     }
   </script>
 
+  <!-- game.js oxirida bo‘lsin -->
   <script src="game.js"></script>
 </body>
 </html>
