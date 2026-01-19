@@ -25,18 +25,8 @@ PORT = int(os.environ.get("PORT", 8080))
 
 def main_keyboard():
     markup = telebot.types.ReplyKeyboardMarkup(resize_keyboard=True)
-    markup.row("🔹 Korxona Haqida", "📞 Aloqa")
-    markup.row("🌐 Saytga O'tish")
-    
-    # Havolani aniq va to'g'ri nom bilan yasaymiz
-    current_game_url = f"{DOMAIN}/game"
-    
-    markup.row(
-        telebot.types.KeyboardButton(
-            "🎮 Tomama O‘yini",
-            web_app=telebot.types.WebAppInfo(url=current_game_url)
-        )
-    )
+    markup.row("🏢 Korxona haqida", "📞 Aloqa")
+    markup.row("🌐 Rasmiy sayt")
     return markup
 
 # =======================
@@ -47,18 +37,20 @@ def main_keyboard():
 def start_handler(message):
     bot.send_message(
         message.chat.id,
-        "🍅 Tomama botiga xush kelibsiz!\nQuyidagi menyudan foydalaning 👇",
-        reply_markup=main_keyboard()
+        "🍅 *Tomama* rasmiy botiga xush kelibsiz!\n\n"
+        "Quyidagi menyu orqali kerakli bo‘limni tanlang:",
+        reply_markup=main_keyboard(),
+        parse_mode="Markdown"
     )
 
-@bot.message_handler(func=lambda m: m.text == "🔹 Korxona Haqida")
+@bot.message_handler(func=lambda m: m.text == "🏢 Korxona haqida")
 def about_handler(message):
     bot.send_message(
         message.chat.id,
-        "📢 *Tomama haqida*\n\n"
-        "2009-yildan buyon sifatli mahsulotlar.\n\n"
-        "📧 Email: tomama-uz@mail.ru\n"
-        "📞 Tel: +998905547400",
+        "🏢 *Tomama haqida*\n\n"
+        "2009-yildan buyon sifat va ishonchni ustuvor qilgan holda mahsulotlar ishlab chiqaramiz.\n\n"
+        "📧 *Email:* tomama-uz@mail.ru\n"
+        "📞 *Telefon:* +998 90 554 74 00",
         parse_mode="Markdown"
     )
 
@@ -66,23 +58,28 @@ def about_handler(message):
 def contact_handler(message):
     bot.send_message(
         message.chat.id,
-        "📬 *Aloqa*\n\n"
-        "📞 +998905547400\n"
-        "🕘 09:00–18:00\n"
-        "📅 Dushanba–Juma",
+        "📞 *Aloqa ma’lumotlari*\n\n"
+        "☎️ *Telefon:* +998 90 554 74 00\n"
+        "🕘 *Ish vaqti:* 09:00 – 18:00\n"
+        "📅 *Ish kunlari:* Dushanba – Juma",
         parse_mode="Markdown"
     )
 
-@bot.message_handler(func=lambda m: m.text == "🌐 Saytga O'tish")
+@bot.message_handler(func=lambda m: m.text == "🌐 Rasmiy sayt")
 def site_handler(message):
     kb = telebot.types.InlineKeyboardMarkup()
     kb.add(
         telebot.types.InlineKeyboardButton(
-            "🔗 Saytga o‘tish",
+            "🔗 Tomama.uz saytiga o‘tish",
             url="https://www.tomama.uz"
         )
     )
-    bot.send_message(message.chat.id, "🌍 Rasmiy sayt:", reply_markup=kb)
+    bot.send_message(
+        message.chat.id,
+        "🌍 *Rasmiy veb-saytga kirish*:",
+        reply_markup=kb,
+        parse_mode="Markdown"
+    )
 
 # =======================
 # TELEGRAM WEBHOOK
@@ -95,7 +92,8 @@ def telegram_webhook():
     return "OK", 200
 
 # =======================
-# WEB APP (O‘YIN)
+# WEB APP (O‘YIN) - ENDI KERAK EMAS, LEKIN STATIK FAYLLAR QOLADI
+# (Agar umuman webapp ishlatilmasa, /game va static route'larni ham o'chirib yuborishingiz mumkin.)
 # =======================
 
 @app.route("/game")
